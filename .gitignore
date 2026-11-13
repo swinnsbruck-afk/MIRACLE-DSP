@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Build output (built outside the repository, see README)
+build/
+*-build/
+
+# Release artefacts are attached to GitHub Releases, not committed
+*.dmg
+*.pkg
+*Source.zip
+Release/*/LICENSE.txt
+Release/*/THIRD_PARTY_NOTICES.md
+Release/*/LICENSES/
+
+# Reference photo of the original hardware (third-party copyright)
+1.jpg

@@ -1,0 +1,52 @@
+MIRACLE DSP 1.3.1
+Digital Sample Player – just like 1985
+=================================================
+
+INHALT DIESES ORDNERS
+
+  MIRACLE DSP Installer.pkg   Installiert AU, VST3 und Standalone-App
+  Anleitung.html               Bedienungsanleitung (im Browser öffnen)
+  Dokumentation.html           Technische Dokumentation und Parameterliste
+  Manual.html                  Bedienungsanleitung auf Englisch
+  Documentation.html           Technische Dokumentation auf Englisch
+  README.txt                   Diese Datei auf Englisch
+  Uninstall - Deinstallieren.command   Entfernt das Plugin wieder
+  Bilder/                      Bilder für die Anleitung
+  LICENSE.txt                  Lizenztext (GNU AGPL v3)
+  MIRACLE DSP 1.3.1 Source.zip Quellcode zum Selbstbauen
+  Mockups/                     Werbegrafiken (Hero, Banner, Social, Story, Laptop, Feature-Sheet)
+
+
+SCHNELLSTART
+
+  1. Doppelklick auf "MIRACLE DSP Installer.pkg".
+     Meldet macOS einen nicht verifizierten Entwickler:
+     Rechtsklick auf die Datei -> Öffnen -> Öffnen.
+  2. Installation mit dem Mac-Passwort bestätigen.
+  3. DAW neu starten (in Logic: Instrument -> AU Instruments -> ESS76).
+  4. Im Plugin unter LOAD auf Upper oder Lower drücken, Sample-Ordner oder WAV-Datei wählen
+     und mit Snd AUF/AB durch die Sounds blättern. Oct AUF/AB transponiert
+     in Oktaven. Die Taste EDIT PANEL öffnet alle Regler.
+
+
+SYSTEM
+
+  macOS 11 oder neuer, Apple Silicon oder Intel.
+  Formate: Audio Unit, VST3, Standalone.
+
+
+LIZENZ
+
+  Copyright (C) 2026 Stefan Schäfer (ESS76)
+  MIRACLE DSP ist freie Software unter der GNU Affero General Public License,
+  Version 3 oder später. Vollständiger Text: LICENSE.txt in diesem Ordner.
+  Lizenzen der Fremdkomponenten: THIRD_PARTY_NOTICES.md und Ordner LICENSES.
+  Keine Gewährleistung. Der Quellcode liegt als "MIRACLE DSP 1.3.1 Source.zip" bei
+  und auf GitHub: https://github.com/swinnsbruck-afk/MIRACLE-DSP
+  Verwendet JUCE 8 (AGPLv3), das VST3-SDK 3.7.12 von Steinberg (GPLv3) und das
+  AudioUnitSDK von Apple (Apache 2.0).
+
+
+RECHTLICHER HINWEIS
+
+  Nicht mit Ensoniq oder Creative Technology verbunden. „Ensoniq“ und „Mirage“ sind Marken ihrer jeweiligen Inhaber und werden nur beschreibend verwendet.

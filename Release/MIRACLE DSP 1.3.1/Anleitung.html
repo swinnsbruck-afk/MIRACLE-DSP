@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIRACLE DSP – Bedienungsanleitung</title>
+<style>
+  :root { --ink:#1d1d1f; --dim:#5d5d63; --line:#d9d6cc; --red:#c9261d; --panel:#f6f5f1; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font: 15px/1.6 -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  header { background:#26282c; color:#e9e6dd; padding:40px 24px 30px; border-bottom:6px solid var(--red); }
+  header .wrap { max-width:960px; margin:0 auto; }
+  header .brand { display:inline-block; border:1.5px solid #d8d6cd; border-radius:4px; padding:0 8px; font-weight:700; letter-spacing:.08em; font-size:13px; }
+  header h1 { margin:10px 0 4px; font-family:"Arial Black", Arial, sans-serif; font-size:44px; color:#f2b518; letter-spacing:.01em; }
+  header p { margin:0; color:#c5c2b8; letter-spacing:.06em; font-size:14px; }
+  header em { color:#f2b518; }
+  main { max-width:960px; margin:0 auto; padding:24px; }
+  nav { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 20px; margin:8px 0 28px; }
+  nav ol { margin:6px 0; padding-left:20px; columns:2; }
+  h2 { margin-top:44px; padding-bottom:6px; border-bottom:2px solid var(--ink); font-size:22px; }
+  h3 { margin-top:28px; font-size:17px; }
+  img { max-width:100%; display:block; border-radius:4px; margin:14px 0; }
+  img.small { max-width:420px; }
+  .num { display:inline-block; min-width:26px; padding:0 5px; border-radius:4px; background:#14300f; color:#8fd27a; font: 700 12px/20px Menlo, monospace; text-align:center; }
+  .dot { display:inline-block; width:24px; height:24px; border-radius:50%; background:var(--red); color:#fff; font: 700 13px/24px Arial; text-align:center; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+  th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:var(--panel); font-weight:600; }
+  .tip, .warn { border-left:4px solid; padding:10px 14px; border-radius:4px; margin:16px 0; }
+  .tip { border-color:#3b8f4e; background:#eef7f0; }
+  .warn { border-color:var(--red); background:#fbeeed; }
+  kbd { border:1px solid #bbb; border-bottom-width:2px; border-radius:4px; padding:0 5px; font-size:13px; background:#fafafa; }
+  ol.steps li { margin-bottom:6px; }
+  footer { max-width:960px; margin:40px auto; padding:0 24px; color:var(--dim); font-size:13px; }
+  @media print { header { background:#fff; color:#000; } header p { color:#444; } nav ol { columns:1; } }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand">ESS76</div>
+  <h1>MIRACLE DSP</h1>
+  <p>Digital Sample Player · <em>just like 1985</em> · Bedienungsanleitung · Version 1.3.1 · <a href="Manual.html" style="color:#f2b518">English</a></p>
+</div></header>
+
+<main>
+<nav>
+  <strong>Inhalt</strong>
+  <ol>
+    <li><a href="#ueberblick">Überblick</a></li>
+    <li><a href="#installation">Installation</a></li>
+    <li><a href="#start">Erste Schritte</a></li>
+    <li><a href="#oberflaeche">Die Oberfläche</a></li>
+    <li><a href="#sounds">Sounds laden und auswählen</a></li>
+    <li><a href="#keypad">Das Keypad</a></li>
+    <li><a href="#edit">Das EDIT PANEL</a></li>
+    <li><a href="#parameter">Parameter im Detail</a></li>
+    <li><a href="#programme">Programme und Keyboard-Hälften</a></li>
+    <li><a href="#speichern">Speichern</a></li>
+    <li><a href="#tipps">Klang-Tipps</a></li>
+    <li><a href="#probleme">Fehlerbehebung</a></li>
+    <li><a href="#deinstallation">Deinstallation</a></li>
+  </ol>
+</nav>
+
+<h2 id="ueberblick">1. Überblick</h2>
+<p><strong>MIRACLE DSP</strong> ist ein Sample-Player mit dem Charakter eines 8-Bit-Samplers der 1980er-Jahre: niedrige Sample-Rate mit Aliasing, 8-Bit-Auflösung und ein resonanzfähiges 4-Pol-Tiefpassfilter. Die Oberfläche folgt dem klassischen Hardware-Aufbau: Keypad, grünes Display, Disk-Fach, Laufwerk, Pitch- und Mod-Rad.</p>
+<ul>
+  <li>Formate: VST3, Audio Unit (AU) und eigenständige App (Standalone)</li>
+  <li>System: macOS 11 oder neuer, Apple Silicon und Intel</li>
+  <li>Zwei Keyboard-Hälften (LOWER/UPPER), jede mit eigenem Sample-Ordner</li>
+  <li>Bis zu 16 Stimmen, 2 Oszillatoren pro Stimme</li>
+</ul>
+<img src="Bilder/oberflaeche.png" alt="Oberfläche von MIRACLE DSP">
+
+<h2 id="installation">2. Installation</h2>
+<ol class="steps">
+  <li>Doppelklick auf <strong>MIRACLE DSP Installer.pkg</strong>.</li>
+  <li>Falls macOS meldet, dass das Paket von einem nicht verifizierten Entwickler stammt: Rechtsklick auf die Datei → <em>Öffnen</em> → <em>Öffnen</em>. Alternativ unter <em>Systemeinstellungen → Datenschutz &amp; Sicherheit</em> auf <em>Trotzdem öffnen</em> klicken.</li>
+  <li>Den Schritten des Installers folgen und mit deinem Mac-Passwort bestätigen.</li>
+  <li>DAW (Logic, Ableton, Cubase …) neu starten. Gegebenenfalls einen Plugin-Rescan auslösen.</li>
+</ol>
+<table>
+  <tr><th>Komponente</th><th>Ort</th></tr>
+  <tr><td>Audio Unit</td><td><code>/Library/Audio/Plug-Ins/Components/MIRACLE DSP.component</code></td></tr>
+  <tr><td>VST3</td><td><code>/Library/Audio/Plug-Ins/VST3/MIRACLE DSP.vst3</code></td></tr>
+  <tr><td>Standalone-App</td><td><code>/Programme/MIRACLE DSP.app</code></td></tr>
+</table>
+<p>In Logic findest du das Plugin unter <em>Instrument → AU Instruments → ESS76 → MIRACLE DSP</em>.</p>
+
+<h2 id="start">3. Erste Schritte</h2>
+<ol class="steps">
+  <li>Plugin auf eine Instrumentenspur laden. Ohne Samples spielt eine eingebaute Wellenform („INIT WAVE“), damit du sofort etwas hörst.</li>
+  <li>Rechts im Keypad unter <strong>LOAD</strong> die weiße Taste <strong>Upper</strong> drücken und einen Ordner oder eine einzelne WAV-Datei wählen. Du kannst beides auch einfach aufs Plugin ziehen.</li>
+  <li>Mit <strong>Snd ▲</strong> und <strong>Snd ▼</strong> durch die Sounds blättern, oder im Disk-Fach links einen Sound anklicken.</li>
+  <li>Für die linke Tastaturhälfte dasselbe mit <strong>Lower</strong> wiederholen.</li>
+  <li>Alle Regler öffnest du mit der Taste <strong>EDIT PANEL</strong> oben rechts.</li>
+</ol>
+<div class="tip">Die Trennstelle zwischen LOWER und UPPER ist der <strong>Split-Punkt</strong> (Standard C3, rotes Dreieck auf der Tastatur). Mit SPLIT = 0 spielt die ganze Tastatur den UPPER-Sound.</div>
+
+<h2 id="oberflaeche">4. Die Oberfläche</h2>
+<img src="Bilder/uebersicht_nummeriert.png" alt="Übersicht mit nummerierten Bedienelementen">
+<table>
+  <tr><th>Nr.</th><th>Element</th><th>Funktion</th></tr>
+  <tr><td><span class="dot">1</span></td><td>Disk-Fach</td><td>Oben je eine Zeile für UPPER und LOWER mit Sound, Position und Oktave. Darunter die Liste aller Sounds der aktiven Hälfte.</td></tr>
+  <tr><td><span class="dot">2</span></td><td>Laufwerk</td><td>Zeigt den Namen des geladenen Ordners der aktiven Hälfte.</td></tr>
+  <tr><td><span class="dot">3</span></td><td>PITCH / MOD/MIX</td><td>Pitch-Rad federt in die Mitte zurück. Das Mod-Rad erhöht die LFO-Tiefe (Vibrato). Beide drehen sich mit, wenn du die Räder am MIDI-Keyboard bewegst.</td></tr>
+  <tr><td><span class="dot">4</span></td><td>VOLUME</td><td>Gesamtlautstärke.</td></tr>
+  <tr><td><span class="dot">5</span></td><td>Display</td><td>Links Parameternummer, rechts Wert. Im Ruhezustand: aktive Hälfte und Programm (z. B. <span class="num">U1</span>), Sound-Nummer und Name.</td></tr>
+  <tr><td><span class="dot">6</span></td><td>CONTROL</td><td>Param, Value, Off/▼, On/▲ (siehe Kapitel 6).</td></tr>
+  <tr><td><span class="dot">7</span></td><td>SELECT</td><td>Zifferntasten, Cancel, 0/Prog, Enter.</td></tr>
+  <tr><td><span class="dot">8</span></td><td>SOUND</td><td>Snd ▲/▼ blättert durch die Sounds, Oct ▲/▼ transponiert die aktive Hälfte in Oktaven (−3 bis +3).</td></tr>
+  <tr><td><span class="dot">9</span></td><td>HALF</td><td>Wählt die Hälfte, die du bearbeitest. Die aktive Taste leuchtet.</td></tr>
+  <tr><td><span class="dot">10</span></td><td>LOAD</td><td>Öffnet die Auswahl für UPPER oder LOWER: Ordner oder einzelne Audiodatei.</td></tr>
+  <tr><td><span class="dot">11</span></td><td>EDIT PANEL</td><td>Klappt das Bearbeitungsfeld mit allen Reglern auf und zu.</td></tr>
+  <tr><td><span class="dot">12</span></td><td>Tastatur</td><td>61 Tasten (C1–C6) zum Anspielen mit der Maus.</td></tr>
+</table>
+
+<h2 id="sounds">5. Sounds laden und auswählen</h2>
+<img class="small" src="Bilder/detail_sounds.png" alt="Disk-Fach mit Sound-Liste">
+<ul>
+  <li><strong>Laden:</strong> Taste <strong>Upper</strong> oder <strong>Lower</strong> unter LOAD, dann einen Ordner oder eine Datei wählen. <strong>Unterordner werden mit durchsucht.</strong> Wählst du eine einzelne Datei, lädt das Plugin ihren ganzen Ordner und stellt diese Datei ein, damit du weiterblättern kannst.</li>
+  <li><strong>Drag &amp; Drop:</strong> Ordner oder Datei aufs Plugin ziehen. Über einer Zeile UPP/LOW landet sie in dieser Hälfte, sonst in der aktiven Hälfte.</li>
+  <li><strong>Formate:</strong> WAV (8/16/24/32 Bit, Float, auch komprimiert wie µ-law, A-law und ADPCM, Endung auch groß geschrieben), AIFF, FLAC, OGG, MP3. Bis zu 5000 Dateien.</li>
+  <li><strong>Blättern:</strong> <strong>Snd ▲ / ▼</strong> (Taste halten für schnelles Blättern). Am Ende springt die Auswahl wieder an den Anfang.</li>
+  <li><strong>Mausrad:</strong> über einer der Zeilen UPP/LOW blättert in dieser Hälfte.</li>
+  <li><strong>Liste:</strong> Klick wählt einen Sound. Nach einem Klick in die Liste funktionieren auch <kbd>↑</kbd> <kbd>↓</kbd>.</li>
+  <li><strong>Aktive Hälfte wechseln:</strong> eine der Zeilen UPP/LOW anklicken oder Taste unter HALF.</li>
+</ul>
+<h3>Tonhöhe der Samples</h3>
+<p>Jeder Sound liegt auf der ganzen Hälfte. Seinen Grundton erkennt das Plugin automatisch:</p>
+<ol>
+  <li>aus den Metadaten der Datei (z. B. WAV mit hinterlegtem Grundton), sonst</li>
+  <li>aus dem Dateinamen, z. B. <code>Piano_C3.wav</code>, <code>Bass F#2.wav</code>, <code>Str-Eb4.aif</code>, sonst</li>
+  <li>C3.</li>
+</ol>
+<p>Die Zählung folgt Logic und Ableton: <strong>C3 = mittleres C (MIDI 60)</strong>. Mit <strong>Oct ▲/▼</strong>, COARSE und FINE kannst du jede Hälfte nachstimmen.</p>
+<div class="tip">Jedes Sample wird auf volle Lautstärke normalisiert und nach 30 Sekunden abgeschnitten.</div>
+
+<h2 id="keypad">6. Das Keypad</h2>
+<p>Das Keypad funktioniert wie bei den Samplern der 1980er: Jeder Parameter hat eine zweistellige Nummer. Die vollständige Liste steht in Kapitel 8 und in der Dokumentation.</p>
+<img src="Bilder/detail_keypad.png" alt="Keypad und Display">
+<h3>Einen Parameter ändern</h3>
+<img src="Bilder/keypad_ablauf.png" alt="Ablauf: Parameter wählen, Wert ändern, zurück">
+<ol class="steps">
+  <li>Zwei Ziffern tippen, z. B. <strong>3</strong> und <strong>1</strong> für Filter Cutoff. Das Display zeigt Nummer, Wert und Namen.</li>
+  <li><strong>On/▲</strong> oder <strong>Off/▼</strong> ändert den Wert in Schritten (Taste halten für schnelle Änderung). Bei Ein/Aus-Parametern schalten dieselben Tasten.</li>
+  <li>Oder den Wert direkt tippen und mit <strong>Enter</strong> bestätigen, z. B. <strong>4</strong>, <strong>0</strong>, <strong>Enter</strong>.</li>
+  <li><strong>Cancel</strong> kehrt zur Ruheanzeige zurück.</li>
+</ol>
+<table>
+  <tr><th>Taste</th><th>Funktion</th></tr>
+  <tr><td>Param</td><td>Neue Parameternummer eingeben. Danach blättert On/▲ und Off/▼ durch die Parameter.</td></tr>
+  <tr><td>Value</td><td>Zurück zum Wert des gewählten Parameters.</td></tr>
+  <tr><td>Off/▼, On/▲</td><td>Wert ändern, im Param-Modus Parameter wechseln. In der Ruheanzeige ändern sie den zuletzt gewählten Parameter (beim Start Filter Cutoff).</td></tr>
+  <tr><td>1–9</td><td>Ziffern. Die amberfarbenen Tasten 1–4 zeigen außerdem das aktive Programm an.</td></tr>
+  <tr><td>0/Prog</td><td>Programmwahl aus der Ruheanzeige: <strong>0/Prog</strong>, dann <strong>1</strong>–<strong>4</strong>. Zeigt das Display einen Parameter oder läuft eine Zahleneingabe, wirkt die Taste als Ziffer 0.</td></tr>
+  <tr><td>Enter</td><td>Getippten Wert übernehmen.</td></tr>
+  <tr><td>Cancel</td><td>Eingabe abbrechen.</td></tr>
+</table>
+<div class="warn">Zeigt das Display gerade einen Parameter, wirken Ziffern als Wert und <strong>0/Prog</strong> als Ziffer 0. Für einen anderen Parameter erst <strong>Param</strong> drücken, für die Programmwahl erst <strong>Cancel</strong>. Nach 8 Sekunden ohne Eingabe kehrt das Keypad von selbst in die Ruheanzeige zurück.</div>
+<div class="tip">Keypad und Fader arbeiten am selben Parameter: Fader anfassen, dann mit On/▲ und Off/▼ exakt nachjustieren.</div>
+
+<h2 id="edit">7. Das EDIT PANEL</h2>
+<p>Die Taste <strong>EDIT PANEL</strong> klappt unter der Tastatur alle Regler aus. Die Fader gelten für die aktive Hälfte, MASTER für beide. Das Plugin merkt sich, ob das Panel offen ist.</p>
+<img src="Bilder/edit_panel_nummeriert.png" alt="EDIT PANEL mit Buchstaben">
+<table>
+  <tr><th>Feld</th><th>Bereich</th><th>Inhalt</th></tr>
+  <tr><td><span class="dot">A</span></td><td>WAVESAMPLE</td><td>Wellenform mit Abspielbereich und Loop (amber).</td></tr>
+  <tr><td><span class="dot">B</span></td><td>Loop und Start/Ende</td><td>Loop Mode, START, END, LP START, LP END.</td></tr>
+  <tr><td><span class="dot">C</span></td><td>OSCILLATORS</td><td>Stimmung, Mischung, Level, Mix Mode, Mono.</td></tr>
+  <tr><td><span class="dot">D</span></td><td>LFO</td><td>Geschwindigkeit und Tiefe.</td></tr>
+  <tr><td><span class="dot">E</span></td><td>FILTER</td><td>Cutoff, Resonanz, Keyboard-Tracking.</td></tr>
+  <tr><td><span class="dot">F</span></td><td>FILTER ENVELOPE</td><td>Hüllkurve des Filters.</td></tr>
+  <tr><td><span class="dot">G</span></td><td>AMPLITUDE ENVELOPE</td><td>Hüllkurve der Lautstärke.</td></tr>
+  <tr><td><span class="dot">H</span></td><td>MASTER</td><td>Split, Rate, Octave, Tune, Bend, Voices, 8-Bit.</td></tr>
+</table>
+<ul>
+  <li>Fader ziehen ändert den Wert, Doppelklick setzt ihn auf den Standardwert zurück.</li>
+  <li>Mauszeiger auf einem Fader zeigt Nummer und vollständigen Namen.</li>
+</ul>
+
+<h2 id="parameter">8. Parameter im Detail</h2>
+<p>Die Zahl ist die Parameternummer für das Keypad.</p>
+
+<h3>Wavesample und Loop</h3>
+<table>
+  <tr><th>Nr.</th><th>Parameter</th><th>Wirkung</th></tr>
+  <tr><td><span class="num">60</span></td><td>Loop Mode</td><td>0 = <em>Off</em>: Sample spielt einmal. 1 = <em>Manual</em>: Loop zwischen LP START und LP END. 2 = <em>File</em>: Loop aus der Datei; ohne Loop in der Datei spielt das Sample einmal.</td></tr>
+  <tr><td><span class="num">61</span> <span class="num">62</span></td><td>LP START / LP END</td><td>Loop-Punkte in Promille des Abspielbereichs (0–1000), nur bei <em>Manual</em>.</td></tr>
+  <tr><td><span class="num">63</span> <span class="num">64</span></td><td>START / END</td><td>Abspielbereich des Samples (0–1000).</td></tr>
+</table>
+
+<h3>Oszillatoren</h3>
+<table>
+  <tr><th>Nr.</th><th>Parameter</th><th>Wirkung</th></tr>
+  <tr><td><span class="num">34</span></td><td>OCTAVE</td><td>Transponierung in Oktaven (−3 … +3), auch über Oct ▲/▼.</td></tr>
+  <tr><td><span class="num">29</span></td><td>COARSE</td><td>Transponierung in Halbtönen (±24).</td></tr>
+  <tr><td><span class="num">30</span></td><td>FINE</td><td>Feinstimmung in Cent (±50).</td></tr>
+  <tr><td><span class="num">26</span></td><td>DETUNE</td><td>Verstimmt Oszillator 2 um bis zu 50 Cent. Nur hörbar, wenn MIX &gt; 0.</td></tr>
+  <tr><td><span class="num">27</span></td><td>MIX</td><td>Balance zwischen Oszillator 1 (0) und 2 (99). Mit DETUNE entsteht ein Chorus-Effekt.</td></tr>
+  <tr><td><span class="num">28</span></td><td>MIX VEL</td><td>Anschlagstärke verschiebt die Mischung Richtung Oszillator 2.</td></tr>
+  <tr><td><span class="num">39</span></td><td>LEVEL</td><td>Lautstärke der Hälfte.</td></tr>
+  <tr><td><span class="num">22</span></td><td>MIX MODE</td><td>Oszillator 2 spielt den <em>nächsten</em> Sound der Liste. So lassen sich zwei Samples schichten.</td></tr>
+  <tr><td><span class="num">23</span></td><td>MONO</td><td>Einstimmig, die zuletzt gedrückte Taste hat Vorrang.</td></tr>
+</table>
+
+<h3>LFO</h3>
+<table>
+  <tr><th>Nr.</th><th>Parameter</th><th>Wirkung</th></tr>
+  <tr><td><span class="num">24</span></td><td>SPEED</td><td>Geschwindigkeit des Vibratos (ca. 0,1–20 Hz).</td></tr>
+  <tr><td><span class="num">25</span></td><td>DEPTH</td><td>Grundtiefe des Vibratos. Das Mod-Rad erhöht die Tiefe zusätzlich, voll aufgedreht bis ±3 Halbtöne. Hörbar ist das nur, wenn der Sound lange genug klingt.</td></tr>
+</table>
+
+<h3>Filter</h3>
+<table>
+  <tr><th>Nr.</th><th>Parameter</th><th>Wirkung</th></tr>
+  <tr><td><span class="num">31</span></td><td>CUTOFF</td><td>Grenzfrequenz des 4-Pol-Tiefpasses. Kleine Werte = dumpf.</td></tr>
+  <tr><td><span class="num">32</span></td><td>RESO</td><td>Resonanz (0–40). Hohe Werte betonen die Grenzfrequenz bis zur Selbstoszillation.</td></tr>
+  <tr><td><span class="num">33</span></td><td>KEYTRK</td><td>Wie stark das Filter der Tonhöhe folgt (0 = gar nicht, 4 = voll).</td></tr>
+</table>
+
+<h3>Hüllkurven</h3>
+<p>Filter-Hüllkurve <span class="num">40</span>–<span class="num">49</span> und Lautstärke-Hüllkurve <span class="num">50</span>–<span class="num">59</span> sind gleich aufgebaut:</p>
+<table>
+  <tr><th>Regler</th><th>Wirkung</th></tr>
+  <tr><td>ATT</td><td>Einschwingzeit bis zum Spitzenwert.</td></tr>
+  <tr><td>PEAK</td><td>Spitzenwert. Bei der Filter-Hüllkurve: wie weit sich das Filter öffnet.</td></tr>
+  <tr><td>DEC</td><td>Abfallzeit vom Spitzenwert zum Haltepegel.</td></tr>
+  <tr><td>SUS</td><td>Haltepegel, solange die Taste gedrückt ist (relativ zum Spitzenwert).</td></tr>
+  <tr><td>REL</td><td>Ausklingzeit nach dem Loslassen.</td></tr>
+  <tr><td>ATT VEL</td><td>Fester Anschlag verkürzt die Einschwingzeit.</td></tr>
+  <tr><td>PK VEL</td><td>Leiser Anschlag senkt den Spitzenwert.</td></tr>
+  <tr><td>DEC KEY</td><td>Hohe Tasten klingen schneller ab, wie bei Klavier oder Gitarre.</td></tr>
+  <tr><td>SUS KEY</td><td>Hohe Tasten haben einen niedrigeren Haltepegel.</td></tr>
+  <tr><td>REL VEL</td><td>Schnelles Loslassen verkürzt die Ausklingzeit (wenn das Keyboard Release-Velocity sendet).</td></tr>
+</table>
+<p>Zeiten reichen von etwa 1,5 ms (0) bis 30 s (99).</p>
+
+<h3>Master</h3>
+<table>
+  <tr><th>Nr.</th><th>Parameter</th><th>Wirkung</th></tr>
+  <tr><td><span class="num">70</span></td><td>SPLIT</td><td>Erste Taste der UPPER-Hälfte (Standard C3, MIDI 60).</td></tr>
+  <tr><td><span class="num">71</span></td><td>RATE</td><td>Sample-Rate der 8-Bit-Emulation in kHz (8–33). Niedrig = rauer und dumpfer.</td></tr>
+  <tr><td><span class="num">77</span></td><td>OCTAVE</td><td>Transponiert beide Hälften zusammen in Oktaven (−3 … +3). Die Oktave pro Hälfte (34) kommt noch dazu.</td></tr>
+  <tr><td><span class="num">72</span></td><td>TUNE</td><td>Gesamtstimmung in Cent (±50).</td></tr>
+  <tr><td><span class="num">73</span></td><td>BEND</td><td>Pitchbend-Bereich in Halbtönen (0–12).</td></tr>
+  <tr><td><span class="num">74</span></td><td>VOICES</td><td>Maximale Stimmenzahl (1–16).</td></tr>
+  <tr><td><span class="num">75</span></td><td>VOLUME</td><td>Gesamtlautstärke (Fader im Hauptpanel).</td></tr>
+  <tr><td><span class="num">76</span></td><td>8-BIT</td><td>An: 8-Bit-Klang mit Aliasing. Aus: saubere Wiedergabe.</td></tr>
+</table>
+
+<h2 id="programme">9. Programme und Keyboard-Hälften</h2>
+<p>Jede Hälfte hat <strong>4 Programme</strong>. Ein Programm speichert alle Regler der Hälfte (Oszillatoren, LFO, Filter, Hüllkurven, Loop). Der Sound-Ordner und der gewählte Sound gehören zur Hälfte, nicht zum Programm.</p>
+<ul>
+  <li>Programm wählen: gegebenenfalls <strong>Cancel</strong>, dann <strong>0/Prog</strong> und <strong>1</strong>–<strong>4</strong>. Die aktuellen Einstellungen werden im bisherigen Programm gesichert, das neue wird geladen.</li>
+  <li>Eine rote LED in Taste 1–4 zeigt das aktive Programm.</li>
+  <li>Ein leeres Programm startet als Kopie der aktuellen Einstellungen.</li>
+  <li>MASTER-Parameter gelten für beide Hälften und alle Programme.</li>
+</ul>
+
+<h2 id="speichern">10. Speichern</h2>
+<p>Du musst nichts extra speichern. Beim Sichern des DAW-Projekts speichert das Plugin:</p>
+<ul>
+  <li>alle Regler und Schalter,</li>
+  <li>die Ordner beider Hälften und den gewählten Sound,</li>
+  <li>alle 8 Programme,</li>
+  <li>ob das EDIT PANEL offen ist.</li>
+</ul>
+<p>Zusätzlich merkt sich das Plugin die zuletzt benutzten Ordner und Sounds. Eine neue Instanz startet damit automatisch.</p>
+<div class="warn">Die Samples selbst sind nicht im Projekt enthalten, nur der Pfad. Wenn du einen Ordner verschiebst oder umbenennst, lade ihn danach erneut. Für Projekte auf einem anderen Rechner muss der Sample-Ordner dort unter demselben Pfad liegen.</div>
+
+<h2 id="tipps">11. Klang-Tipps</h2>
+<ul>
+  <li><strong>Typische 80er-Streicher:</strong> MIX 50, DETUNE 20, CUTOFF 50, Filter PEAK 40, Amp ATT 35, REL 45.</li>
+  <li><strong>Mehr Lo-Fi:</strong> RATE auf 10–15 kHz und Samples mit Oct ▲ um ein bis zwei Oktaven nach oben transponieren.</li>
+  <li><strong>Resonanz-Bass:</strong> MONO an, CUTOFF 20, RESO 30, Filter PEAK 60, Filter DEC 30.</li>
+  <li><strong>Geschichtete Sounds:</strong> MIX MODE an, MIX 50. Zwei aufeinanderfolgende Dateien im Ordner werden gemeinsam gespielt.</li>
+  <li><strong>Anschlagdynamik:</strong> Amp PK VEL und Filter PK VEL erhöhen. Leiser Anschlag klingt dann leiser und dumpfer.</li>
+</ul>
+
+<h2 id="probleme">12. Fehlerbehebung</h2>
+<table>
+  <tr><th>Problem</th><th>Lösung</th></tr>
+  <tr><td>Plugin erscheint nicht in der DAW</td><td>DAW neu starten und Plugin-Rescan auslösen. In Logic: <em>Einstellungen → Plug-in-Manager → Zurücksetzen &amp; erneut prüfen</em>.</td></tr>
+  <tr><td>Installer lässt sich nicht öffnen</td><td>Rechtsklick → <em>Öffnen</em>, oder <em>Systemeinstellungen → Datenschutz &amp; Sicherheit → Trotzdem öffnen</em>.</td></tr>
+  <tr><td>Kein Ton</td><td>VOLUME, LEVEL und Amp PEAK prüfen. Liegt die gespielte Taste in der richtigen Hälfte (SPLIT)?</td></tr>
+  <tr><td>Sound klingt falsch gestimmt</td><td>Der Grundton wurde nicht erkannt (Anzeige „ROOT C3 (DEFAULT)“ in der Wellenform). Mit Oct, COARSE oder FINE nachstimmen, oder Grundton in den Dateinamen schreiben.</td></tr>
+  <tr><td>Sound bricht ab</td><td>Loop Mode auf <em>Manual</em> stellen oder END prüfen. Samples länger als 30 s werden gekürzt.</td></tr>
+  <tr><td>„NO AUDIO FILES“</td><td>Der Ordner enthält keine unterstützten Dateien.</td></tr>
+  <tr><td>„UNREADABLE“ / „CANNOT READ THIS FILE“</td><td>Die Datei ist beschädigt oder keine echte Audiodatei. Das Plugin spielt dann die INIT WAVE. Nächsten Sound wählen.</td></tr>
+  <tr><td>Räder am Keyboard bewegen nichts</td><td>In der DAW muss die Spur MIDI empfangen. In der Standalone-App den MIDI-Eingang unter <em>Options → Audio/MIDI Settings</em> aktivieren.</td></tr>
+  <tr><td>Display zeigt „NO SUCH PARAMETER“</td><td>Diese Nummer gibt es nicht. Liste siehe Kapitel 8.</td></tr>
+  <tr><td>Ziffern ändern einen Wert statt den Parameter</td><td>Das Keypad ist im Wert-Modus. Erst <strong>Param</strong> drücken, siehe Kapitel 6.</td></tr>
+  <tr><td>Zu verzerrt</td><td>VOLUME oder LEVEL senken, RESO verringern.</td></tr>
+</table>
+
+<h2 id="deinstallation">13. Deinstallation</h2>
+<p>Doppelklick auf <strong>Uninstall - Deinstallieren.command</strong> und mit dem Mac-Passwort bestätigen. Das Skript entfernt Plugins, App und gespeicherte Einstellungen. Deine Samples und DAW-Projekte bleiben unberührt.</p>
+<p>Falls macOS das Skript blockiert: Rechtsklick → <em>Öffnen</em>.</p>
+</main>
+
+<footer>MIRACLE DSP 1.3.1 · ESS76 · Inspiriert von den Samplern der 1980er-Jahre. Nicht mit Ensoniq oder Creative Technology verbunden. „Ensoniq“ und „Mirage“ sind Marken ihrer jeweiligen Inhaber und werden nur beschreibend verwendet.</footer>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIRACLE DSP – Technical Documentation</title>
+<style>
+  :root { --ink:#1d1d1f; --dim:#5d5d63; --line:#d9d6cc; --panel:#f6f5f1; }
+  * { box-sizing: border-box; }
+  body { margin:0; color:var(--ink); font: 15px/1.6 -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  header { background:#26282c; color:#e9e6dd; padding:36px 24px 28px; border-bottom:6px solid #c9261d; }
+  header .wrap, main, footer { max-width:960px; margin:0 auto; }
+  header .brand { display:inline-block; border:1.5px solid #d8d6cd; border-radius:4px; padding:0 8px; font-weight:700; letter-spacing:.08em; font-size:13px; }
+  header h1 { margin:10px 0 6px; font-family:"Arial Black", Arial, sans-serif; font-size:30px; color:#f2b518; letter-spacing:.01em; }
+  header p { margin:0; color:#c5c2b8; font-size:13px; letter-spacing:.06em; }
+  header a { color:#f2b518; }
+  main { padding:24px; }
+  h2 { margin-top:40px; padding-bottom:6px; border-bottom:2px solid var(--ink); font-size:21px; }
+  h3 { margin-top:24px; font-size:16px; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13.5px; }
+  th, td { text-align:left; padding:6px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:var(--panel); font-weight:600; }
+  td.n { font-family:Menlo, monospace; white-space:nowrap; }
+  code, pre { font-family:Menlo, monospace; font-size:13px; }
+  pre { background:#141416; color:#e6e3da; padding:14px 16px; border-radius:6px; overflow-x:auto; line-height:1.5; }
+  .flow { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:14px 0; font-size:13px; }
+  .flow span { background:var(--panel); border:1px solid var(--line); border-radius:5px; padding:6px 10px; }
+  .flow b { color:var(--dim); font-weight:400; }
+  footer { padding:0 24px 40px; color:var(--dim); font-size:13px; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand">ESS76</div>
+  <h1>MIRACLE DSP · Technical Documentation</h1>
+  <p>Digital Sample Player · just like 1985 · Version 1.3.1 · For operation see the <a href="Manual.html">Manual</a> · <a href="Dokumentation.html">Deutsch</a></p>
+</div></header>
+
+<main>
+
+<h2>1. System data</h2>
+<table>
+  <tr><th>Property</th><th>Value</th></tr>
+  <tr><td>Plugin formats</td><td>VST3, Audio Unit v2 (<code>aumu</code>), standalone</td></tr>
+  <tr><td>Architectures</td><td>Universal binary (arm64, x86_64)</td></tr>
+  <tr><td>Minimum system</td><td>macOS 11.0</td></tr>
+  <tr><td>Manufacturer code / plugin code</td><td><code>Ess7</code> / <code>Mdsp</code></td></tr>
+  <tr><td>Bundle ID</td><td><code>com.ess76.miracledsp</code></td></tr>
+  <tr><td>Output</td><td>Stereo or mono (the signal is mono, sent to both channels)</td></tr>
+  <tr><td>MIDI</td><td>Note on/off (including release velocity), pitch bend (also from the panel pitch wheel), CC1 mod wheel (also from the panel mod wheel), CC64 sustain, CC120/123 all sound/notes off. All channels</td></tr>
+  <tr><td>Window size</td><td>1360 × 452 px, with EDIT PANEL 1360 × 770 px</td></tr>
+  <tr><td>Voices</td><td>1–16 (voice stealing: oldest released voice, otherwise oldest voice)</td></tr>
+  <tr><td>Framework</td><td>JUCE 8.0.10 with VST3 SDK 3.7.12, C++20, CMake</td></tr>
+</table>
+
+<h2>2. Signal flow per voice</h2>
+<div class="flow">
+  <span>Wavesample (normalised)</span><b>→</b>
+  <span>Oscillator 1 + 2<br><small>virtual DAC clock, 8 bit</small></span><b>→</b>
+  <span>Mix</span><b>→</b>
+  <span>4-pole ladder low-pass<br><small>cutoff ← filter envelope, keytrack</small></span><b>→</b>
+  <span>VCA<br><small>← amp envelope</small></span><b>→</b>
+  <span>Level</span><b>→</b>
+  <span>Sum of all voices × volume</span><b>→</b>
+  <span>Soft clip</span>
+</div>
+
+<h3>8-bit emulation</h3>
+<p>The Mirage changes pitch by varying the clock of its D/A converter. The plugin reproduces this: each oscillator runs a virtual DAC clock at <code>RATE × pitch ratio</code>. On every tick a new value is read, rounded to 8 bits (<code>round(x·127)/127</code>) and held until the next tick (zero-order hold). There is no interpolation and no anti-aliasing filter before the low-pass. This creates the typical aliasing and quantisation grain.</p>
+<pre>DAC ticks per output sample = RATE · 2^(semitones/12) / host sample rate
+Source samples per DAC tick = file sample rate / RATE
+Semitones = note − root + 12 · (Octave + Master Octave) + Coarse + Fine/100 + Tune/100 + Bend + LFO (+ Detune on osc 2)</pre>
+<p>With 8-BIT off, playback is linearly interpolated without quantisation.</p>
+
+<h3>Filter</h3>
+<p>Zero-delay-feedback ladder filter (4 × TPT one-pole low-pass) with feedback. The saturation at the filter input is modelled loosely on the Curtis CEM3328. Bass loss at high resonance is partly compensated.</p>
+<pre>Octaves = Cutoff/99 · 9.5 + Keytrack/4 · (note − 60)/12 + filter envelope · 9.5
+fc      = 30 Hz · 2^Octaves        (limited to 20 Hz … 0.45 · sample rate)
+k       = 3.96 · Reso/40           (self-oscillation near k = 4)</pre>
+<p>Filter coefficients are updated every 16 samples.</p>
+
+<h3>Envelopes</h3>
+<p>Stages: attack (linear) → peak, decay (exponential) → sustain, release (exponential) → 0. Sustain is relative to the peak.</p>
+<pre>Time(v)  = 1.5 ms · 20000^(v/99)                 v = 0…99  →  1.5 ms … 30 s
+Attack   = Time(ATT) · (1 − 0.95 · ATTVEL/99 · velocity)
+Peak     = PEAK/99 · (1 − PKVEL/99 · (1 − velocity))
+Decay    = Time(DEC) · 2^(−(note − 60)/12 · DECKEY/99)
+Sustain  = Peak · SUS/99 · (1 − SUSKEY/99 · clamp((note − 36)/60, 0, 1))
+Release  = Time(REL) · (1 − 0.9 · RELVEL/99 · release velocity)</pre>
+
+<h3>Oscillator mix and LFO</h3>
+<pre>Mix      = clamp(MIX/99 + MIXVEL/99 · (velocity − 0.5), 0, 1)
+Output   = Osc1 · (1 − Mix) + Osc2 · Mix
+Detune   = DETUNE/99 · 0.5 semitones (osc 2 only)
+LFO      = triangle, 0.1 Hz · 200^(SPEED/99)
+Depth    = (min(99, DEPTH + mod wheel · 99)/99)² · 3 semitones</pre>
+
+<h3>Output</h3>
+<pre>Gain   = 0.9 · (VOLUME/99)²
+Out    = tanh approximation(sum · Gain)</pre>
+
+<h2>3. Parameter reference</h2>
+<p>All parameters can be automated in the DAW. Parameters per half have the prefix <code>L_</code> (lower) or <code>U_</code> (upper), e.g. <code>U_cutoff</code>.</p>
+
+<h3>Per keyboard half</h3>
+<table>
+  <tr><th>No.</th><th>ID</th><th>Name</th><th>Range</th><th>Default</th></tr>
+  <tr><td class="n">22</td><td class="n">mixmode</td><td>Mix Mode</td><td>off/on</td><td>off</td></tr>
+  <tr><td class="n">23</td><td class="n">mono</td><td>Mono Mode</td><td>off/on</td><td>off</td></tr>
+  <tr><td class="n">24</td><td class="n">lfospeed</td><td>LFO Speed</td><td>0–99</td><td>70</td></tr>
+  <tr><td class="n">25</td><td class="n">lfodepth</td><td>LFO Depth</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">26</td><td class="n">detune</td><td>Osc Detune</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">27</td><td class="n">oscmix</td><td>Osc Mix</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">28</td><td class="n">mixvel</td><td>Mix Velocity</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">34</td><td class="n">octave</td><td>Octave</td><td>−3 … +3 octaves</td><td>0</td></tr>
+  <tr><td class="n">29</td><td class="n">coarse</td><td>Coarse Tune</td><td>−24 … +24 semitones</td><td>0</td></tr>
+  <tr><td class="n">30</td><td class="n">fine</td><td>Fine Tune</td><td>−50 … +50 Cent</td><td>0</td></tr>
+  <tr><td class="n">31</td><td class="n">cutoff</td><td>Filter Cutoff</td><td>0–99</td><td>70</td></tr>
+  <tr><td class="n">32</td><td class="n">reso</td><td>Filter Resonance</td><td>0–40</td><td>0</td></tr>
+  <tr><td class="n">33</td><td class="n">keytrack</td><td>Filter Kbd Track</td><td>0–4</td><td>2</td></tr>
+  <tr><td class="n">39</td><td class="n">level</td><td>Level</td><td>0–99</td><td>80</td></tr>
+  <tr><td class="n">40</td><td class="n">f_att</td><td>Filter Attack</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">41</td><td class="n">f_peak</td><td>Filter Peak</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">42</td><td class="n">f_dec</td><td>Filter Decay</td><td>0–99</td><td>40</td></tr>
+  <tr><td class="n">43</td><td class="n">f_sus</td><td>Filter Sustain</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">44</td><td class="n">f_rel</td><td>Filter Release</td><td>0–99</td><td>30</td></tr>
+  <tr><td class="n">45</td><td class="n">f_attvel</td><td>Filter Attack Vel</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">46</td><td class="n">f_peakvel</td><td>Filter Peak Vel</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">47</td><td class="n">f_deckey</td><td>Filter Decay Key</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">48</td><td class="n">f_suskey</td><td>Filter Sustain Key</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">49</td><td class="n">f_relvel</td><td>Filter Release Vel</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">50</td><td class="n">a_att</td><td>Amp Attack</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">51</td><td class="n">a_peak</td><td>Amp Peak</td><td>0–99</td><td>99</td></tr>
+  <tr><td class="n">52</td><td class="n">a_dec</td><td>Amp Decay</td><td>0–99</td><td>40</td></tr>
+  <tr><td class="n">53</td><td class="n">a_sus</td><td>Amp Sustain</td><td>0–99</td><td>99</td></tr>
+  <tr><td class="n">54</td><td class="n">a_rel</td><td>Amp Release</td><td>0–99</td><td>30</td></tr>
+  <tr><td class="n">55</td><td class="n">a_attvel</td><td>Amp Attack Vel</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">56</td><td class="n">a_peakvel</td><td>Amp Peak Vel</td><td>0–99</td><td>40</td></tr>
+  <tr><td class="n">57</td><td class="n">a_deckey</td><td>Amp Decay Key</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">58</td><td class="n">a_suskey</td><td>Amp Sustain Key</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">59</td><td class="n">a_relvel</td><td>Amp Release Vel</td><td>0–99</td><td>0</td></tr>
+  <tr><td class="n">60</td><td class="n">loopmode</td><td>Loop Mode</td><td>Off / Manual / File</td><td>File</td></tr>
+  <tr><td class="n">61</td><td class="n">loopstart</td><td>Loop Start</td><td>0–1000 ‰</td><td>500</td></tr>
+  <tr><td class="n">62</td><td class="n">loopend</td><td>Loop End</td><td>0–1000 ‰</td><td>1000</td></tr>
+  <tr><td class="n">63</td><td class="n">smpstart</td><td>Sample Start</td><td>0–1000 ‰</td><td>0</td></tr>
+  <tr><td class="n">64</td><td class="n">smpend</td><td>Sample End</td><td>0–1000 ‰</td><td>1000</td></tr>
+</table>
+
+<h3>Global</h3>
+<table>
+  <tr><th>No.</th><th>ID</th><th>Name</th><th>Range</th><th>Default</th></tr>
+  <tr><td class="n">70</td><td class="n">split</td><td>Split Point</td><td>MIDI 0–127</td><td>60 (C3)</td></tr>
+  <tr><td class="n">71</td><td class="n">srate</td><td>Sample Rate</td><td>8–33 kHz</td><td>29</td></tr>
+  <tr><td class="n">77</td><td class="n">octave</td><td>Master Octave</td><td>−3 … +3 octaves</td><td>0</td></tr>
+  <tr><td class="n">72</td><td class="n">tune</td><td>Master Tune</td><td>−50 … +50 Cent</td><td>0</td></tr>
+  <tr><td class="n">73</td><td class="n">bend</td><td>Bend Range</td><td>0–12 semitones</td><td>2</td></tr>
+  <tr><td class="n">74</td><td class="n">voices</td><td>Voices</td><td>1–16</td><td>8</td></tr>
+  <tr><td class="n">75</td><td class="n">volume</td><td>Master Volume</td><td>0–99</td><td>80</td></tr>
+  <tr><td class="n">76</td><td class="n">lofi</td><td>8-Bit Mode</td><td>off/on</td><td>on</td></tr>
+</table>
+
+<h3>Keypad states</h3>
+<table>
+  <tr><th>State</th><th>Input</th><th>Effect</th></tr>
+  <tr><td>idle</td><td>Digit</td><td>Goes to param, first digit of the number</td></tr>
+  <tr><td>idle</td><td>On/▲, Off/▼</td><td>Value of the most recently selected parameter ±1, goes to value. At startup this is Filter Cutoff (31)</td></tr>
+  <tr><td>param</td><td>Second digit</td><td>Selects the parameter, goes to value. Unknown number: “NO SUCH PARAMETER”</td></tr>
+  <tr><td>param</td><td>On/▲, Off/▼</td><td>Previous/next parameter in number order</td></tr>
+  <tr><td>value</td><td>On/▲, Off/▼</td><td>Value ±1, limited to the range</td></tr>
+  <tr><td>value</td><td>Digits, Enter</td><td>Sets the value directly (max. 4 digits), limited to the range. 0/Prog acts as digit 0 here too</td></tr>
+  <tr><td>any</td><td>Param</td><td>Goes to param, entry starts over</td></tr>
+  <tr><td>any</td><td>Value</td><td>Goes to value, shows the selected parameter</td></tr>
+  <tr><td>idle/param with no entry in progress</td><td>0/Prog</td><td>Goes to program</td></tr>
+  <tr><td>program</td><td>1–4</td><td>Loads that program of the active half, back to idle. Other digits cancel</td></tr>
+  <tr><td>all</td><td>Cancel or 8 s without input</td><td>Back to idle</td></tr>
+</table>
+
+<h3>Wheels</h3>
+<p>The audio thread stores pitch bend and CC1 in atomic variables. The interface reads them at 30 Hz and moves the wheels along. While you hold a wheel with the mouse, the mouse takes priority. Mouse movements enter the same input as MIDI (<code>MidiMessageCollector</code>).</p>
+
+<h2>4. Samples</h2>
+<table>
+  <tr><th>Property</th><th>Behaviour</th></tr>
+  <tr><td>File types</td><td>WAV (PCM 8–32 bit, float, extensible, µ-law, A-law, IMA ADPCM), AIFF, FLAC, OGG, MP3. Extensions are not case-sensitive</td></tr>
+  <tr><td>Search</td><td>Recursive through all subfolders, max. 5000 files. Choosing a single file or drag &amp; drop loads its folder and selects the file. Files with a leading dot (e.g. <code>._name.wav</code>) are ignored.</td></tr>
+  <tr><td>Sorting</td><td>Natural order by relative path (“Kick 2” before “Kick 10”)</td></tr>
+  <tr><td>Loading</td><td>On selection: the folder is scanned once; only the selected sound and the next one (for Mix Mode) are loaded.</td></tr>
+  <tr><td>Processing</td><td>Stereo is mixed to mono, normalised to a peak of 1.0 and cut to 30 s.</td></tr>
+  <tr><td>Root note</td><td>1. Metadata <code>MidiUnityNote</code> (WAV <code>smpl</code>, AIFF <code>INST</code>) · 2. File name (last note name such as <code>C3</code>, <code>F#2</code>, <code>Eb4</code>, <code>C-1</code>; C3 = 60) · 3. C3</td></tr>
+  <tr><td>Loop “File”</td><td>First loop from the WAV <code>smpl</code> chunk (<code>Loop0Start</code>/<code>Loop0End</code>)</td></tr>
+</table>
+
+<h2>5. Storage</h2>
+<h3>DAW project</h3>
+<p>The plugin state is stored as XML (binary wrapped):</p>
+<pre>&lt;MiracleDSPState version="1" editPanelOpen="0"&gt;
+  &lt;PARAMS&gt; … all parameters … &lt;/PARAMS&gt;
+  &lt;Folders lower="/path/to/folder" upper="/path/to/folder"
+           lowerSound="Subfolder/File.wav" upperSound="File.wav"/&gt;
+  &lt;Programs currentLower="0" currentUpper="2"&gt;
+    &lt;Program half="0" slot="0" cutoff="0.70" … /&gt;   &lt;!-- normalised values 0…1 --&gt;
+  &lt;/Programs&gt;
+&lt;/MiracleDSPState&gt;</pre>
+<p>The sound is found again by its path relative to the folder, so the selection survives added files. If the file is missing, the first sound is selected. If the folder is missing, the path stays stored and the built-in waveform plays.</p>
+
+<h3>Global preferences</h3>
+<p><code>~/Library/Application Support/MIRACLE DSP/MIRACLE DSP.settings</code> stores the most recently used folders and sounds (<code>lastLowerFolder</code>, <code>lastLowerSound</code>, <code>lastUpperFolder</code>, <code>lastUpperSound</code>) and <code>editPanelOpen</code>. New instances load these automatically; a saved project state takes priority.</p>
+
+<h2>6. Installation (technical)</h2>
+<table>
+  <tr><th>File</th><th>Target</th></tr>
+  <tr><td><code>MIRACLE DSP.component</code></td><td><code>/Library/Audio/Plug-Ins/Components/</code></td></tr>
+  <tr><td><code>MIRACLE DSP.vst3</code></td><td><code>/Library/Audio/Plug-Ins/VST3/</code></td></tr>
+  <tr><td><code>MIRACLE DSP.app</code></td><td><code>/Applications/</code></td></tr>
+</table>
+<p>Package ID: <code>com.ess76.miracledsp.pkg</code>. The postinstall script removes copies with the same name from <code>~/Library/Audio/Plug-Ins</code>, so the plugin does not appear twice, and resets the AU cache (<code>AudioComponentRegistrar</code>). The bundles are ad-hoc signed; package and plugins are not notarised by Apple. That is why Gatekeeper asks on first opening.</p>
+<p>To verify the installation:</p>
+<pre>pkgutil --pkg-info com.ess76.miracledsp.pkg
+auval -v aumu Mdsp Ess7</pre>
+
+<h2>7. Building from source</h2>
+<pre>pip3 install --user cmake
+git clone --depth 1 --branch 8.0.10 https://github.com/juce-framework/JUCE.git ~/Developer/JUCE
+export PATH="$HOME/Library/Python/3.9/bin:$PATH"
+cmake -S MiracleDSP -B build -DCMAKE_BUILD_TYPE=Release \
+      "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+cmake --build build -j8</pre>
+<p>The build copies the plugins to <code>~/Library/Audio/Plug-Ins</code>. Installer and DMG are created by <code>Release/build_installer.sh [build folder]</code>; the default is <code>~/Developer/MiracleDSP-build-universal</code>.</p>
+
+<h3>Project structure</h3>
+<table>
+  <tr><th>File</th><th>Contents</th></tr>
+  <tr><td><code>Source/Params.h</code></td><td>Parameter catalogue with original-style numbers, ranges, defaults</td></tr>
+  <tr><td><code>Source/MiracleEngine.*</code></td><td>Voice management, oscillators with DAC emulation, ladder filter, envelopes, LFO, MIDI</td></tr>
+  <tr><td><code>Source/SampleBank.*</code></td><td>Folder scan, audio file loading, root note and loop detection</td></tr>
+  <tr><td><code>Source/PluginProcessor.*</code></td><td>Plugin interface, programs, save/load, thread-safe sound change</td></tr>
+  <tr><td><code>Source/PluginEditor.*</code></td><td>Interface: display, keypad logic, disk tray, pitch and mod wheels, EDIT PANEL with faders, waveform, keyboard</td></tr>
+</table>
+<p>Thread safety: a sound change creates a new, reference-counted <code>SampleBank</code> object. The audio thread takes it over with a try-lock. The message thread frees old objects once no voice uses them. Files are never loaded on the audio thread. The mouse wheels go through <code>MidiMessageCollector</code>, which locks briefly internally.</p>
+
+<h2>8. Differences from the original</h2>
+<ul>
+  <li>No sampling from an audio input, no Mirage disk format, no sequencer.</li>
+  <li>One sound per half instead of up to 8 wavesamples with keyboard zones.</li>
+  <li>Up to 16 instead of 8 voices; samples up to 30 s instead of 64 KB per half.</li>
+  <li>Parameter numbers are based on the original but are not identical.</li>
+  <li>The keypad column “SOUND” (sound and octave) and HALF/LOAD replace the sequencer and sample keys of the original. The EDIT PANEL is an addition with no hardware counterpart.</li>
+</ul>
+</main>
+<footer>MIRACLE DSP 1.3.1 · Inspired by the samplers of the 1980s. Not affiliated with Ensoniq or Creative Technology. “Ensoniq” and “Mirage” are trademarks of their respective owners and are used descriptively only.</footer>
+</body>
+</html>
