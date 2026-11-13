@@ -6,7 +6,7 @@ Instrument plugin (VST3, AU, standalone) for macOS, built with JUCE 8. Manuals a
 
 Download: https://github.com/swinnsbruck-afk/MIRACLE-DSP/releases
 
-☕ **Enjoying MIRACLE DSP?** I would be happy about a coffee: [paypal.me/ess76](https://paypal.me/ess76). Entirely voluntary, the plugin stays free.
+☕ **Enjoying MIRACLE DSP?** I would be happy about a coffee: [☕ Buy me a coffee for €2.90](https://paypal.me/ess76/2.90EUR). Entirely voluntary, the plugin stays free.
 
 ## Installation
 
