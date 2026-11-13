@@ -1,12 +1,24 @@
 # MIRACLE DSP – Digital Sample Player, just like 1985
 
+![MIRACLE DSP – Digital Sample Player, just like 1985](Release/MIRACLE%20DSP%201.3.1/Mockups/01_hero_1920x1080.png)
+
 Made by ESS76. 8-bit sample player modelled on the Ensoniq Mirage.
 
 Instrument plugin (VST3, AU, standalone) for macOS, built with JUCE 8. Manuals and documentation are in `Release/MIRACLE DSP 1.3.1/`, in English and German. [Deutsche README](README.md)
 
 Download: https://github.com/swinnsbruck-afk/MIRACLE-DSP/releases
 
+Project page: https://www.76ideen.com/miracle-dsp.html#top
+
 ☕ **Enjoying MIRACLE DSP?** I would be happy about a coffee: [☕ Buy me a coffee for €2.90](https://paypal.me/ess76/2.90EUR). Entirely voluntary, the plugin stays free.
+
+## Screenshots
+
+![MIRACLE DSP – interface](Release/MIRACLE%20DSP%201.3.1/Bilder/oberflaeche.png)
+*The interface (version 1.3.1)*
+
+![MIRACLE DSP – edit panel](Release/MIRACLE%20DSP%201.3.1/Bilder/oberflaeche_edit.png)
+*With the edit panel open: wavesample, oscillators, LFO, filter, envelopes, master*
 
 ## Installation
 
