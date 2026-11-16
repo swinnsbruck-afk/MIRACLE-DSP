@@ -1,6 +1,6 @@
 # MIRACLE DSP – Digital Sample Player, just like 1985
 
-![MIRACLE DSP – Digital Sample Player, just like 1985](Release/MIRACLE%20DSP%201.3.1/Mockups/01_hero_1920x1080.png)
+![MIRACLE DSP – Digital Sample Player, just like 1985](Release/MIRACLE%20DSP%201.4.0/Mockups/01_hero_1920x1080.png)
 
 Made by ESS76. 8-bit sample player modelled on the Ensoniq Mirage.
 
@@ -14,10 +14,10 @@ Project page: https://www.76ideen.com/miracle-dsp.html#top
 
 ## Screenshots
 
-![MIRACLE DSP – interface](Release/MIRACLE%20DSP%201.3.1/Bilder/oberflaeche.png)
+![MIRACLE DSP – interface](Release/MIRACLE%20DSP%201.4.0/Bilder/oberflaeche.png)
 *The interface (version 1.3.1)*
 
-![MIRACLE DSP – edit panel](Release/MIRACLE%20DSP%201.3.1/Bilder/oberflaeche_edit.png)
+![MIRACLE DSP – edit panel](Release/MIRACLE%20DSP%201.4.0/Bilder/oberflaeche_edit.png)
 *With the edit panel open: wavesample, oscillators, LFO, filter, envelopes, master*
 
 ## Installation
