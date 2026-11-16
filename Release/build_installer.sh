@@ -102,6 +102,8 @@ ditto "$PROJ/LICENSES" "$OUT/LICENSES"
 SRC="$WORK/src/MIRACLE DSP $VERSION Source"
 mkdir -p "$SRC"
 ditto "$PROJ/Source" "$SRC/Source"
+# artwork renders are compiled into the binary; Blender script and promo tools rebuild them
+ditto "$PROJ/Assets" "$SRC/Assets"
 cp "$PROJ/CMakeLists.txt" "$PROJ/LICENSE" "$PROJ/README.md" "$PROJ/README.en.md" "$PROJ/THIRD_PARTY_NOTICES.md" "$SRC/"
 ditto "$PROJ/LICENSES" "$SRC/LICENSES"
 mkdir -p "$SRC/Release"
