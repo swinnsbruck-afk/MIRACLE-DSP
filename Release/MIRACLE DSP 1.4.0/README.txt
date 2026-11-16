@@ -1,4 +1,4 @@
-MIRACLE DSP 1.3.1
+MIRACLE DSP 1.4.0
 Digital Sample Player – just like 1985
 =================================================
 
@@ -13,7 +13,7 @@ CONTENTS OF THIS FOLDER
   Uninstall - Deinstallieren.command   Removes the plugin again
   Bilder/                      Images for the manuals
   LICENSE.txt                  Licence text (GNU AGPL v3)
-  MIRACLE DSP 1.3.1 Source.zip Source code to build it yourself
+  MIRACLE DSP 1.4.0 Source.zip Source code to build it yourself
   Mockups/                     Promotional graphics (hero, banner, social, story, laptop, feature sheet)
 
 
@@ -41,7 +41,7 @@ LICENSE
   MIRACLE DSP is free software under the GNU Affero General Public License,
   version 3 or later. Full text: LICENSE.txt in this folder.
   Third-party licences: THIRD_PARTY_NOTICES.md and the LICENSES folder.
-  No warranty. The source code is included as "MIRACLE DSP 1.3.1 Source.zip"
+  No warranty. The source code is included as "MIRACLE DSP 1.4.0 Source.zip"
   and on GitHub: https://github.com/swinnsbruck-afk/MIRACLE-DSP
   Uses JUCE 8 (AGPLv3), the Steinberg VST3 SDK 3.7.12 (GPLv3) and the Apple
   AudioUnitSDK (Apache 2.0).

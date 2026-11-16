@@ -846,6 +846,16 @@ void RealisticKeyboard::drawWhiteNote (int note, juce::Graphics& g, juce::Rectan
     {
         g.setOpacity (1.0f);
         g.drawImage (isDown ? whiteDown : whiteUp, area);
+        if (isDown)
+        {
+            // pressed key: sinks into shadow from the back, like a real key
+            juce::ColourGradient shade (juce::Colours::black.withAlpha (0.38f), 0.0f, key.getY(),
+                                        juce::Colours::black.withAlpha (0.16f), 0.0f, key.getBottom(), false);
+            g.setGradientFill (shade);
+            g.fillRect (key);
+            g.setColour (juce::Colours::black.withAlpha (0.35f));
+            g.fillRect (key.getX(), key.getBottom() - 4.0f, key.getWidth(), 4.0f);
+        }
         if (isOver && ! isDown)
         {
             g.setColour (juce::Colours::black.withAlpha (0.04f));
@@ -912,6 +922,13 @@ void RealisticKeyboard::drawBlackNote (int note, juce::Graphics& g, juce::Rectan
     {
         g.setOpacity (1.0f);
         g.drawImage (isDown ? blackDown : blackUp, area);
+        if (isDown)
+        {
+            juce::ColourGradient shine (juce::Colours::white.withAlpha (0.08f), 0.0f, area.getY(),
+                                        juce::Colours::white.withAlpha (0.30f), 0.0f, area.getBottom(), false);
+            g.setGradientFill (shine);
+            g.fillRoundedRectangle (area.reduced (1.0f, 0.0f), 2.0f);
+        }
         if (isOver)
         {
             g.setColour (juce::Colours::white.withAlpha (0.06f));

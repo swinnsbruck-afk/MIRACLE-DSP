@@ -3,7 +3,7 @@
 # Usage: ./build_installer.sh [path-to-universal-build-dir]
 set -euo pipefail
 
-VERSION="1.3.1"
+VERSION="1.4.0"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PROJ="$(cd "$HERE/.." && pwd)"
 BUILD="${1:-$HOME/Developer/MIRACLE-DSP-build-universal}"

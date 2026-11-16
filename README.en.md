@@ -4,7 +4,7 @@
 
 Made by ESS76. 8-bit sample player modelled on the Ensoniq Mirage.
 
-Instrument plugin (VST3, AU, standalone) for macOS, built with JUCE 8. Manuals and documentation are in `Release/MIRACLE DSP 1.3.1/`, in English and German. [Deutsche README](README.md)
+Instrument plugin (VST3, AU, standalone) for macOS, built with JUCE 8. Manuals and documentation are in `Release/MIRACLE DSP 1.4.0/`, in English and German. [Deutsche README](README.md)
 
 Download: https://github.com/swinnsbruck-afk/MIRACLE-DSP/releases
 
