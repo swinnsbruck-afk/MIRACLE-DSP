@@ -27,6 +27,8 @@ struct Wavesample
 {
     juce::String name;
     std::vector<float> data;        // mono, peak-normalised
+    std::vector<float> reversed;    // the same samples back to front, for Reverse
+    float fileBpm = 0.0f;           // tempo written in the file name ("Loop 120bpm"), 0 = unknown
     double fileRate = 44100.0;
     int rootNote = 60;
     bool rootKnown = false;         // root came from file metadata or file name
@@ -71,6 +73,9 @@ public:
     static Ptr createDefault();
 
     static bool loadFile (const juce::File& file, juce::AudioFormatManager& formats, Wavesample& out);
+
+    // Parses names like "Drums 120bpm", "Break_94 BPM"; 0 when there is none.
+    static float parseBpmFromName (const juce::String& name);
 
     // Parses names like "Piano_C3", "bass-F#2", "Str Eb4" (C3 = MIDI 60).
     static int parseNoteFromName (const juce::String& name);

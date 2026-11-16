@@ -161,6 +161,7 @@
 <div class="tip">Keypad und Fader arbeiten am selben Parameter: Fader anfassen, dann mit On/▲ und Off/▼ exakt nachjustieren.</div>
 
 <h2 id="edit">7. Das EDIT PANEL</h2>
+<p>Eine weiße Linie im Wellenform-Fenster zeigt, wo das Sample gerade spielt. Sie startet bei jedem Anschlag am Startpunkt.</p>
 <p>Die Taste <strong>EDIT PANEL</strong> klappt unter der Tastatur alle Regler aus. Die Fader gelten für die aktive Hälfte, MASTER für beide. Das Plugin merkt sich, ob das Panel offen ist.</p>
 <img src="Bilder/edit_panel_nummeriert.png" alt="EDIT PANEL mit Buchstaben">
 <table>
@@ -188,6 +189,8 @@
   <tr><td><span class="num">60</span></td><td>Loop Mode</td><td>0 = <em>Off</em>: Sample spielt einmal. 1 = <em>Manual</em>: Loop zwischen LP START und LP END. 2 = <em>File</em>: Loop aus der Datei; ohne Loop in der Datei spielt das Sample einmal.</td></tr>
   <tr><td><span class="num">61</span> <span class="num">62</span></td><td>LP START / LP END</td><td>Loop-Punkte in Promille des Abspielbereichs (0–1000), nur bei <em>Manual</em>.</td></tr>
   <tr><td><span class="num">63</span> <span class="num">64</span></td><td>START / END</td><td>Abspielbereich des Samples (0–1000).</td></tr>
+  <tr><td><span class="num">35</span></td><td>REVERSE</td><td>Spielt das Sample rückwärts. Loop-Punkte aus der Datei werden gespiegelt.</td></tr>
+  <tr><td><span class="num">36</span></td><td>TEMPO SYNC</td><td>Ermittelt das Tempo der DAW und das Tempo des Samples (aus dem Dateinamen, z. B. „Drumloop 100bpm“, sonst aus der Länge: 1, 2, 4, 8 … Schläge zwischen 70 und 180 BPM). Die Taste, die das Sample im DAW-Tempo spielt, wird auf der Tastatur rot markiert. Die Feinstimmung der Hälfte wird so angepasst, dass diese Taste genau passt. Ändert sich das DAW-Tempo, wandert die Markierung mit.</td></tr>
 </table>
 
 <h3>Oszillatoren</h3>

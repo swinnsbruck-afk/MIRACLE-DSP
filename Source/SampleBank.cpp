@@ -132,6 +132,9 @@ bool SampleBank::loadFile (const juce::File& file, juce::AudioFormatManager& for
         for (auto& s : ws.data)
             s /= peak;
 
+    ws.reversed.assign (ws.data.rbegin(), ws.data.rend());
+    ws.fileBpm = parseBpmFromName (ws.name);
+
     const auto& meta = reader->metadataValues;
 
     if (meta.containsKey ("MidiUnityNote"))
@@ -193,8 +196,30 @@ SampleBank::Ptr SampleBank::createDefault()
 
     ws.fileLoopStart = cycle * (cycles - 1);
     ws.fileLoopEnd = cycle * cycles;
+    ws.reversed.assign (ws.data.rbegin(), ws.data.rend());
     bank->samples.push_back (std::move (ws));
     return bank;
+}
+
+float SampleBank::parseBpmFromName (const juce::String& name)
+{
+    const auto s = name.toLowerCase();
+    for (int at = s.indexOf ("bpm"); at >= 0; at = s.indexOf (at + 3, "bpm"))
+    {
+        int end = at;
+        while (end > 0 && (s[end - 1] == ' ' || s[end - 1] == '_' || s[end - 1] == '-'))
+            --end;
+
+        int begin = end;
+        while (begin > 0 && (juce::CharacterFunctions::isDigit (s[begin - 1]) || s[begin - 1] == '.'))
+            --begin;
+
+        const float bpm = s.substring (begin, end).getFloatValue();
+        if (bpm >= 40.0f && bpm <= 300.0f)
+            return bpm;
+    }
+
+    return 0.0f;
 }
 
 int SampleBank::parseNoteFromName (const juce::String& name)

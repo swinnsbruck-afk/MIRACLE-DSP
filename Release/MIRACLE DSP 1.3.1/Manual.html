@@ -161,6 +161,7 @@
 <div class="tip">Keypad and faders work on the same parameter: touch a fader, then fine-tune with On/▲ and Off/▼.</div>
 
 <h2 id="edit">7. The EDIT PANEL</h2>
+<p>A white line in the waveform window shows where the sample is playing. It starts at the start point with every note.</p>
 <p>The <strong>EDIT PANEL</strong> key folds out all controls below the keyboard. The faders apply to the active half, MASTER to both. The plugin remembers whether the panel is open.</p>
 <img src="Bilder/edit_panel_nummeriert.png" alt="EDIT PANEL with letters">
 <table>
@@ -188,6 +189,8 @@
   <tr><td><span class="num">60</span></td><td>Loop Mode</td><td>0 = <em>Off</em>: the sample plays once. 1 = <em>Manual</em>: loop between LP START and LP END. 2 = <em>File</em>: loop stored in the file; without one the sample plays once.</td></tr>
   <tr><td><span class="num">61</span> <span class="num">62</span></td><td>LP START / LP END</td><td>Loop points in per mille of the play range (0–1000), <em>Manual</em> only.</td></tr>
   <tr><td><span class="num">63</span> <span class="num">64</span></td><td>START / END</td><td>Play range of the sample (0–1000).</td></tr>
+  <tr><td><span class="num">35</span></td><td>REVERSE</td><td>Plays the sample backwards. Loop points stored in the file are mirrored.</td></tr>
+  <tr><td><span class="num">36</span></td><td>TEMPO SYNC</td><td>Reads the DAW tempo and the sample tempo (from the file name, e.g. “Drumloop 100bpm”, otherwise from its length: 1, 2, 4, 8 … beats between 70 and 180 BPM). The key that plays the sample in the DAW tempo is marked red on the keyboard, and the fine tuning of the half is adjusted so that this key fits exactly. When the DAW tempo changes, the mark follows.</td></tr>
 </table>
 
 <h3>Oscillators</h3>

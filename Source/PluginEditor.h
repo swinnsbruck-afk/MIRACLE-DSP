@@ -50,16 +50,36 @@ private:
     juce::String left { "L1" }, right, caption { "MIRACLE DSP" };
 };
 
+// Waveform with play range, loop region and a white line that follows playback.
+// The waveform itself is cached; only the line is redrawn while a note plays.
 class WaveformView : public juce::Component
 {
 public:
     explicit WaveformView (MiracleAudioProcessor& p) : audioProcessor (p) {}
-    void setHalf (int h) { half = h; repaint(); }
+    void setHalf (int h) { half = h; invalidate(); }
+    void invalidate() { cacheValid = false; repaint(); }
+    void setPlayhead (float position);
     void paint (juce::Graphics&) override;
+    void resized() override { invalidate(); }
 
 private:
+    void renderCache();
+
     MiracleAudioProcessor& audioProcessor;
     int half = 0;
+    float playhead = -1.0f;
+    juce::Image cache;
+    bool cacheValid = false;
+    bool hasSample = false;
+    juce::Rectangle<float> plot;
+};
+
+// Latching panel key with its label printed on the cap (Reverse, Tempo Sync)
+class PanelSwitch : public juce::Button
+{
+public:
+    explicit PanelSwitch (const juce::String& text) : juce::Button (text) { setClickingTogglesState (true); }
+    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
 };
 
 // Flat rectangular panel key
@@ -128,6 +148,9 @@ class RealisticKeyboard : public juce::MidiKeyboardComponent
 public:
     RealisticKeyboard (juce::MidiKeyboardState& s) : MidiKeyboardComponent (s, horizontalKeyboard) {}
     int splitNote = 60;
+    int syncKeys[2] { -1, -1 };   // keys that play a sample in host tempo, drawn red
+
+    bool isSyncKey (int note) const { return note >= 0 && (note == syncKeys[0] || note == syncKeys[1]); }
 
 protected:
     void drawWhiteNote (int note, juce::Graphics&, juce::Rectangle<float> area, bool isDown, bool isOver,
@@ -258,6 +281,8 @@ private:
     juce::ComboBox loopModeBox;
     juce::Label loopLabel;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> loopModeAttachment;
+    PanelSwitch reverseSwitch { "REVERSE" }, syncSwitch { "TEMPO SYNC" };
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> reverseAttachment, syncAttachment;
     WaveformView waveform;
     RealisticKeyboard keyboard;
     juce::TooltipWindow tooltipWindow { this, 700 };

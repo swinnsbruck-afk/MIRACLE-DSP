@@ -50,6 +50,7 @@ enum HP
     hpFAtt, hpFPeak, hpFDec, hpFSus, hpFRel, hpFAttVel, hpFPeakVel, hpFDecKey, hpFSusKey, hpFRelVel,
     hpAAtt, hpAPeak, hpADec, hpASus, hpARel, hpAAttVel, hpAPeakVel, hpADecKey, hpASusKey, hpARelVel,
     hpLoopMode, hpLoopStart, hpLoopEnd, hpSmpStart, hpSmpEnd,
+    hpReverse, hpTempoSync,
     kNumHP
 };
 
@@ -93,6 +94,8 @@ inline const Def halfDefs[kNumHP] = {
     { "loopend",   "Loop End",           "LP END",  62, 0, 1000, 1000, tInt,    nullptr },
     { "smpstart",  "Sample Start",       "START",   63, 0, 1000, 0,    tInt,    nullptr },
     { "smpend",    "Sample End",         "END",     64, 0, 1000, 1000, tInt,    nullptr },
+    { "reverse",   "Reverse",            "REVERSE", 35, 0, 1,    0,    tBool,   nullptr },
+    { "tsync",     "Tempo Sync",         "SYNC",    36, 0, 1,    0,    tBool,   nullptr },
 };
 
 // Global parameters

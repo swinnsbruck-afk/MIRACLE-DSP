@@ -34,6 +34,10 @@ target_sources(MiracleDSP PRIVATE
     Source/MiracleEngine.cpp
     Source/SampleBank.cpp)
 
+# Panel artwork rendered in Blender (Assets/blender/render_assets.py)
+file(GLOB MIRACLE_RENDERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Assets/renders/*.png")
+juce_add_binary_data(MiracleArtwork SOURCES ${MIRACLE_RENDERS})
+
 target_compile_definitions(MiracleDSP PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
@@ -42,6 +46,7 @@ target_compile_definitions(MiracleDSP PUBLIC
 target_link_libraries(MiracleDSP
     PRIVATE
         juce::juce_audio_utils
+        MiracleArtwork
         juce::juce_audio_formats
     PUBLIC
         juce::juce_recommended_config_flags

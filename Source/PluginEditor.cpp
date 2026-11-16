@@ -18,6 +18,8 @@
 
 #include "PluginEditor.h"
 
+#include <BinaryData.h>
+
 #include <algorithm>
 
 using namespace params;
@@ -191,6 +193,15 @@ void addGrain (juce::Image& image, juce::Rectangle<int> area, float amount, int 
 const char* const audioPatterns = "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3";
 const char* const audioExtensions = "wav;aif;aiff;flac;ogg;mp3";
 
+// Artwork rendered in Blender; an invalid image means "draw it by hand"
+juce::Image artwork (const char* name)
+{
+    int size = 0;
+    if (auto* data = BinaryData::getNamedResource (name, size))
+        return juce::ImageCache::getFromMemory (data, size);
+    return {};
+}
+
 juce::String arrow (bool up)
 {
     return juce::String::fromUTF8 (up ? "\xe2\x96\xb2" : "\xe2\x96\xbc");
@@ -240,6 +251,16 @@ void MiracleLookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, int 
 
     // black cap with white line
     auto cap = juce::Rectangle<float> (cx - capW * 0.5f, pos - capH * 0.5f, capW, capH);
+    static const juce::Image largeCap = artwork ("fader_large_png"), smallCap = artwork ("fader_small_png");
+    const auto& sprite = w > 30 ? largeCap : smallCap;
+    if (sprite.isValid())
+    {
+        g.setColour (juce::Colours::black.withAlpha (0.5f));
+        g.fillRoundedRectangle (cap.translated (0.0f, 2.0f), 1.5f);
+        g.setOpacity (1.0f);
+        g.drawImage (sprite, cap);
+        return;
+    }
     g.setColour (juce::Colours::black.withAlpha (0.6f));
     g.fillRoundedRectangle (cap.translated (0.0f, 2.0f), 1.5f);
     juce::ColourGradient body (juce::Colour (0xff3b3d40), cap.getX(), cap.getY(), juce::Colour (0xff0d0e0f), cap.getX(), cap.getBottom(), false);
@@ -356,8 +377,48 @@ void LedDisplay::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void WaveformView::setPlayhead (float position)
+{
+    if (std::abs (position - playhead) > 1.0e-5f)
+    {
+        playhead = position;
+        repaint();
+    }
+}
+
 void WaveformView::paint (juce::Graphics& g)
 {
+    if (! cacheValid)
+        renderCache();
+
+    if (cache.isValid())
+        g.drawImage (cache, getLocalBounds().toFloat());
+
+    // playback position, restarts at the sample start with every note
+    if (hasSample && playhead >= 0.0f && playhead <= 1.0f)
+    {
+        const float x = plot.getX() + playhead * plot.getWidth();
+        g.setColour (juce::Colours::white.withAlpha (0.25f));
+        g.fillRect (x - 2.0f, plot.getY(), 4.0f, plot.getHeight());
+        g.setColour (juce::Colours::white);
+        g.fillRect (x - 0.75f, plot.getY(), 1.5f, plot.getHeight());
+    }
+}
+
+void WaveformView::renderCache()
+{
+    cacheValid = true;
+    hasSample = false;
+
+    const int w = getWidth(), h = getHeight();
+    if (w <= 0 || h <= 0)
+        return;
+
+    constexpr int scale = 2;
+    cache = juce::Image (juce::Image::ARGB, w * scale, h * scale, true);
+    juce::Graphics g (cache);
+    g.addTransform (juce::AffineTransform::scale ((float) scale));
+
     auto r = getLocalBounds().toFloat();
     drawInset (g, r, 3.0f);
 
@@ -382,11 +443,14 @@ void WaveformView::paint (juce::Graphics& g)
     auto value = [&] (int idx) { return audioProcessor.apvts.getRawParameterValue (halfId (half, idx))->load(); };
 
     const auto& ws = bank->samples[0];
-    const int n = (int) ws.data.size();
+    const bool reverse = value (hpReverse) > 0.5f;
+    const auto& data = reverse ? ws.reversed : ws.data;
+    const int n = (int) data.size();
     if (n < 2)
         return;
 
-    auto plot = r.reduced (6.0f, 18.0f);
+    hasSample = true;
+    plot = r.reduced (6.0f, 18.0f);
     const float mid = plot.getCentreY();
     const float amp = plot.getHeight() * 0.5f;
     auto xFor = [&] (double sampleIndex) { return plot.getX() + (float) (sampleIndex / n) * plot.getWidth(); };
@@ -399,8 +463,8 @@ void WaveformView::paint (juce::Graphics& g)
 
     if (loopMode == 2 && ws.fileLoopStart >= 0)
     {
-        loopStart = ws.fileLoopStart;
-        loopEnd = ws.fileLoopEnd;
+        loopStart = reverse ? n - ws.fileLoopEnd : ws.fileLoopStart;
+        loopEnd = reverse ? n - ws.fileLoopStart : ws.fileLoopEnd;
     }
     else if (loopMode == 1)
     {
@@ -416,7 +480,8 @@ void WaveformView::paint (juce::Graphics& g)
         g.fillRect (juce::Rectangle<float>::leftTopRightBottom (xFor (loopStart), plot.getY(), xFor (loopEnd), plot.getBottom()));
     }
 
-    const int columns = std::max (1, (int) plot.getWidth());
+    const int columns = std::max (1, (int) plot.getWidth() * scale);
+    const float columnWidth = plot.getWidth() / (float) columns;
     juce::Path wave;
     for (int c = 0; c < columns; ++c)
     {
@@ -426,10 +491,10 @@ void WaveformView::paint (juce::Graphics& g)
         const int step = std::max (1, (s1 - s0) / 64);
         for (int s = s0; s < s1 && s < n; s += step)
         {
-            lo = std::min (lo, ws.data[(size_t) s]);
-            hi = std::max (hi, ws.data[(size_t) s]);
+            lo = std::min (lo, data[(size_t) s]);
+            hi = std::max (hi, data[(size_t) s]);
         }
-        wave.addRectangle (plot.getX() + (float) c, mid - hi * amp, 1.0f, std::max (1.0f, (hi - lo) * amp));
+        wave.addRectangle (plot.getX() + (float) c * columnWidth, mid - hi * amp, columnWidth, std::max (0.5f, (hi - lo) * amp));
     }
 
     g.setColour (colours::scope);
@@ -447,9 +512,13 @@ void WaveformView::paint (juce::Graphics& g)
         g.drawVerticalLine ((int) xFor (loopEnd), plot.getY(), plot.getBottom());
     }
 
+    auto text = r.reduced (8.0f, 3.0f);
     g.setColour (colours::scope);
     g.setFont (uiFont (10.5f, true));
-    g.drawText (ws.name.toUpperCase(), r.reduced (8.0f, 3.0f).removeFromTop (13.0f), juce::Justification::centredLeft, true);
+    juce::String title = ws.name.toUpperCase();
+    if (reverse)
+        title << "   [REVERSE]";
+    g.drawText (title, text.removeFromTop (13.0f), juce::Justification::centredLeft, true);
 
     juce::String info = "ROOT " + juce::MidiMessage::getMidiNoteName (ws.rootNote, true, true, 3);
     if (! ws.rootKnown)
@@ -458,8 +527,53 @@ void WaveformView::paint (juce::Graphics& g)
     if (loopMode == 2)
         info << (ws.fileLoopStart >= 0 ? "   FILE LOOP" : "   NO FILE LOOP");
 
+    // With Tempo Sync the line shows the tempi and the key instead of the file details
+    const int syncKey = audioProcessor.getSyncKey (half);
+    if (value (hpTempoSync) > 0.5f)
+    {
+        info = "SYNC " + juce::String (audioProcessor.getSampleBpm (half), 1) + " > "
+             + juce::String (audioProcessor.getHostBpm(), 1) + " BPM   KEY "
+             + (syncKey >= 0 ? juce::MidiMessage::getMidiNoteName (syncKey, true, true, 3) : juce::String ("OUT OF RANGE"))
+             + "   " + juce::String ((double) n / ws.fileRate, 2) + " S";
+    }
+
     g.setColour (colours::scope.withAlpha (0.7f));
-    g.drawText (info, r.reduced (8.0f, 3.0f).removeFromBottom (13.0f), juce::Justification::centredLeft, true);
+    g.drawText (info, text.removeFromBottom (13.0f), juce::Justification::centredLeft, true);
+}
+
+void PanelSwitch::paintButton (juce::Graphics& g, bool highlighted, bool down)
+{
+    auto r = getLocalBounds().toFloat().reduced (1.0f, 1.0f);
+    r.removeFromBottom (2.0f);
+    if (down)
+        r.translate (0.0f, 1.0f);
+
+    g.setColour (juce::Colours::black.withAlpha (0.75f));
+    g.fillRoundedRectangle (r.translated (0.0f, down ? 1.0f : 2.0f), 2.0f);
+
+    const bool on = getToggleState();
+    auto base = on ? colours::amber : colours::keyGrey;
+    if (highlighted)
+        base = base.brighter (0.08f);
+
+    juce::ColourGradient grad (base.brighter (0.08f), r.getX(), r.getY(), base.darker (0.18f), r.getX(), r.getBottom(), false);
+    g.setGradientFill (grad);
+    g.fillRoundedRectangle (r, 2.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.35f));
+    g.drawHorizontalLine ((int) r.getY(), r.getX() + 2.0f, r.getRight() - 2.0f);
+
+    auto led = r.removeFromLeft (16.0f).withSizeKeepingCentre (5.0f, 5.0f);
+    if (on)
+    {
+        g.setColour (juce::Colour (0xffff3a20).withAlpha (0.35f));
+        g.fillEllipse (led.expanded (2.5f));
+    }
+    g.setColour (on ? juce::Colour (0xffff3a20) : juce::Colour (0xff4a1a14));
+    g.fillEllipse (led);
+
+    g.setColour (juce::Colour (0xff1c1c1c));
+    g.setFont (uiFont (9.5f, true));
+    g.drawText (getButtonText(), r.withTrimmedRight (6.0f), juce::Justification::centred);
 }
 
 //==============================================================================
@@ -478,6 +592,32 @@ void KeyCap::paintButton (juce::Graphics& g, bool highlighted, bool down)
     r.removeFromBottom (2.0f);
     if (down)
         r.translate (0.0f, 1.0f);
+
+    static const juce::Image amberCap = artwork ("keycap_amber_png"), greyCap = artwork ("keycap_grey_png"),
+                             whiteCap = artwork ("keycap_white_png"), blackCap = artwork ("keycap_black_png");
+    const auto& sprite = cap == colours::amber ? amberCap : cap == colours::keyWhite ? whiteCap
+                       : cap == colours::keyBlack ? blackCap : greyCap;
+    if (sprite.isValid())
+    {
+        g.setColour (juce::Colours::black.withAlpha (0.7f));
+        g.fillRoundedRectangle (r.translated (0.0f, down ? 1.0f : 2.0f), 1.5f);
+        g.setOpacity (1.0f);
+        g.drawImage (sprite, r);
+        if (down || highlighted)
+        {
+            g.setColour (down ? juce::Colours::black.withAlpha (0.18f) : juce::Colours::white.withAlpha (0.06f));
+            g.fillRoundedRectangle (r, 1.5f);
+        }
+        if (lit)
+        {
+            const auto dot = juce::Rectangle<float> (r.getCentreX() - 2.5f, r.getCentreY() - 2.5f, 5.0f, 5.0f);
+            g.setColour (juce::Colour (0xffff3a20).withAlpha (0.35f));
+            g.fillEllipse (dot.expanded (2.5f));
+            g.setColour (juce::Colour (0xffff3a20));
+            g.fillEllipse (dot);
+        }
+        return;
+    }
 
     g.setColour (juce::Colours::black.withAlpha (0.75f));
     g.fillRect (r.translated (0.0f, down ? 1.0f : 2.0f).expanded (0.5f, 0.0f));
@@ -607,14 +747,39 @@ void ControlWheel::paint (juce::Graphics& g)
     g.drawRoundedRectangle (r, 3.0f, 1.0f);
 
     auto wheel = r.reduced (3.0f, 2.0f);
+    const float travel = spring ? value : value * 2.0f - 1.0f;
+    const float phase = -travel * 1.2f; // wheel up moves the marks up
+
+    static const juce::Array<juce::Image> frames = []
+    {
+        juce::Array<juce::Image> list;
+        for (int i = 0; i < 12; ++i)
+            list.add (artwork (juce::String::formatted ("wheel_%02d_png", i).toRawUTF8()));
+        return list;
+    }();
+
+    if (frames[0].isValid())
+    {
+        // the rendered frames cover one 10 degree rib spacing
+        const float degrees = juce::radiansToDegrees (phase);
+        const int frame = ((int) std::floor (degrees / (10.0f / 12.0f)) % 12 + 12) % 12;
+        g.setOpacity (1.0f);
+        g.drawImage (frames[frame], wheel);
+        if (std::abs (phase) < juce::MathConstants<float>::halfPi)
+        {
+            const float y = wheel.getCentreY() + std::sin (phase) * wheel.getHeight() * 0.5f;
+            g.setColour (juce::Colours::white.withAlpha (0.85f * std::cos (phase)));
+            g.fillRect (wheel.getX() + 2.0f, y - 1.0f, wheel.getWidth() - 4.0f, 2.0f);
+        }
+        return;
+    }
+
     juce::ColourGradient body (juce::Colour (0xff0b0b0c), wheel.getX(), wheel.getY(), juce::Colour (0xff0b0b0c), wheel.getX(), wheel.getBottom(), false);
     body.addColour (0.5, juce::Colour (0xff3a3b3e));
     g.setGradientFill (body);
     g.fillRoundedRectangle (wheel, 2.0f);
 
     // ridges rotate with the wheel; spacing shrinks towards the edges like a cylinder
-    const float travel = spring ? value : value * 2.0f - 1.0f;
-    const float phase = -travel * 1.2f; // wheel up moves the marks up
     for (int i = -12; i <= 12; ++i)
     {
         const float a = (float) i * 0.19f + phase;
@@ -676,10 +841,42 @@ void RealisticKeyboard::drawWhiteNote (int note, juce::Graphics& g, juce::Rectan
 {
     auto key = area.reduced (0.7f, 0.0f);
 
+    static const juce::Image whiteUp = artwork ("key_white_up_png"), whiteDown = artwork ("key_white_down_png");
+    if (whiteUp.isValid())
+    {
+        g.setOpacity (1.0f);
+        g.drawImage (isDown ? whiteDown : whiteUp, area);
+        if (isOver && ! isDown)
+        {
+            g.setColour (juce::Colours::black.withAlpha (0.04f));
+            g.fillRect (key);
+        }
+        if (isSyncKey (note))
+        {
+            g.setColour (colours::stripeRed.withAlpha (isDown ? 0.75f : 0.6f));
+            g.fillRoundedRectangle (key, 2.0f);
+        }
+        if (note == splitNote)
+        {
+            juce::Path tri;
+            const float cx = area.getCentreX(), y = area.getBottom() - 22.0f;
+            tri.addTriangle (cx - 5.0f, y + 7.0f, cx + 5.0f, y + 7.0f, cx, y);
+            g.setColour (colours::stripeRed);
+            g.fillPath (tri);
+        }
+        return;
+    }
+
     juce::ColourGradient body (isDown ? juce::Colour (0xffd0cabb) : juce::Colour (0xfff1ecdf), key.getX(), key.getY(),
                                isDown ? juce::Colour (0xffb9b2a1) : juce::Colour (0xffe6e0d0), key.getX(), key.getBottom(), false);
     g.setGradientFill (body);
     g.fillRoundedRectangle (key.withTrimmedTop (-4.0f), 2.0f);
+
+    if (isSyncKey (note))
+    {
+        g.setColour (colours::stripeRed.withAlpha (isDown ? 0.75f : 0.6f));
+        g.fillRoundedRectangle (key.withTrimmedTop (-4.0f), 2.0f);
+    }
 
     if (isOver && ! isDown)
     {
@@ -704,11 +901,29 @@ void RealisticKeyboard::drawWhiteNote (int note, juce::Graphics& g, juce::Rectan
     }
 }
 
-void RealisticKeyboard::drawBlackNote (int, juce::Graphics& g, juce::Rectangle<float> area, bool isDown, bool isOver,
+void RealisticKeyboard::drawBlackNote (int note, juce::Graphics& g, juce::Rectangle<float> area, bool isDown, bool isOver,
                                        juce::Colour)
 {
     g.setColour (juce::Colours::black.withAlpha (0.4f));
     g.fillRoundedRectangle (area.translated (1.5f, 1.5f), 2.0f);
+
+    static const juce::Image blackUp = artwork ("key_black_up_png"), blackDown = artwork ("key_black_down_png");
+    if (blackUp.isValid())
+    {
+        g.setOpacity (1.0f);
+        g.drawImage (isDown ? blackDown : blackUp, area);
+        if (isOver)
+        {
+            g.setColour (juce::Colours::white.withAlpha (0.06f));
+            g.fillRoundedRectangle (area, 2.0f);
+        }
+        if (isSyncKey (note))
+        {
+            g.setColour (colours::stripeRed.withAlpha (0.85f));
+            g.fillRoundedRectangle (area.reduced (area.getWidth() * 0.1f, 0.0f).withTrimmedBottom (6.0f), 1.5f);
+        }
+        return;
+    }
 
     juce::ColourGradient body (juce::Colour (0xff040404), area.getX(), area.getY(),
                                juce::Colour (0xff1e1e1f), area.getX(), area.getBottom(), false);
@@ -721,6 +936,12 @@ void RealisticKeyboard::drawBlackNote (int, juce::Graphics& g, juce::Rectangle<f
                                juce::Colour (isDown ? 0xff353536 : 0xff434345), top.getX(), top.getBottom(), false);
     g.setGradientFill (face);
     g.fillRoundedRectangle (top, 1.5f);
+
+    if (isSyncKey (note))
+    {
+        g.setColour (colours::stripeRed.withAlpha (0.85f));
+        g.fillRoundedRectangle (top, 1.5f);
+    }
 
     g.setColour (juce::Colours::white.withAlpha (isOver ? 0.32f : 0.2f));
     g.drawLine (top.getX() + 1.5f, top.getY() + 3.0f, top.getX() + 1.5f, top.getBottom() - 3.0f, 1.0f);
@@ -798,6 +1019,13 @@ MiracleAudioProcessorEditor::MiracleAudioProcessorEditor (MiracleAudioProcessor&
     addChildComponent (loopLabel);
     addChildComponent (waveform);
 
+    reverseSwitch.setTooltip ("35  Reverse: play the sample backwards");
+    syncSwitch.setTooltip ("36  Tempo Sync: the red key on the keyboard plays the sample in the DAW tempo");
+    reverseSwitch.onClick = [this] { showParam (hpReverse, false, reverseSwitch.getToggleState() ? 1.0 : 0.0); waveform.invalidate(); };
+    syncSwitch.onClick = [this] { showParam (hpTempoSync, false, syncSwitch.getToggleState() ? 1.0 : 0.0); };
+    addChildComponent (reverseSwitch);
+    addChildComponent (syncSwitch);
+
     for (int idx : { hpSmpStart, hpSmpEnd, hpLoopStart, hpLoopEnd,
                      hpCoarse, hpFine, hpDetune, hpOscMix, hpMixVel, hpLevel, hpLfoSpeed, hpLfoDepth,
                      hpCutoff, hpReso, hpKeyTrack })
@@ -827,7 +1055,7 @@ MiracleAudioProcessorEditor::MiracleAudioProcessorEditor (MiracleAudioProcessor&
     editOpen = audioProcessor.isEditPanelOpen();
     setSize (editorWidth, compactHeight + (editOpen ? editPanelHeight : 0));
     selectHalf (0);
-    startTimerHz (30);
+    startTimerHz (50);
 }
 
 MiracleAudioProcessorEditor::~MiracleAudioProcessorEditor()
@@ -993,6 +1221,11 @@ void MiracleAudioProcessorEditor::attachHalf()
 
     loopModeAttachment.reset();
     loopModeAttachment = std::make_unique<APVTS::ComboBoxAttachment> (audioProcessor.apvts, halfId (currentHalf, hpLoopMode), loopModeBox);
+
+    reverseAttachment.reset();
+    syncAttachment.reset();
+    reverseAttachment = std::make_unique<APVTS::ButtonAttachment> (audioProcessor.apvts, halfId (currentHalf, hpReverse), reverseSwitch);
+    syncAttachment = std::make_unique<APVTS::ButtonAttachment> (audioProcessor.apvts, halfId (currentHalf, hpTempoSync), syncSwitch);
 }
 
 void MiracleAudioProcessorEditor::setEditPanelVisible (bool open)
@@ -1218,7 +1451,7 @@ void MiracleAudioProcessorEditor::refreshSounds()
         soundList.deselectAllRows();
     }
     soundList.repaint();
-    waveform.repaint();
+    waveform.invalidate();
 
     const auto folder = audioProcessor.getFolder (currentHalf);
     folderText = folder == juce::File() ? juce::String ("NO DISK") : folder.getFileName();
@@ -1342,15 +1575,30 @@ void MiracleAudioProcessorEditor::timerCallback()
         keyboard.repaint();
     }
 
+    for (int half = 0; half < 2; ++half)
+    {
+        const int key = audioProcessor.getSyncKey (half);
+        if (key != keyboard.syncKeys[half])
+        {
+            keyboard.syncKeys[half] = key;
+            keyboard.repaint();
+        }
+    }
+
+    waveform.setPlayhead (audioProcessor.getPlayhead (currentHalf));
+
     // repaint the waveform only when something it shows has changed
-    static constexpr int watched[] = { hpLoopMode, hpLoopStart, hpLoopEnd, hpSmpStart, hpSmpEnd };
+    static constexpr int watched[] = { hpLoopMode, hpLoopStart, hpLoopEnd, hpSmpStart, hpSmpEnd, hpReverse, hpTempoSync };
     juce::int64 hash = version * 31 + currentHalf;
+    hash = hash * 131 + audioProcessor.getSyncKey (currentHalf);
+    hash = hash * 1009 + juce::roundToInt (audioProcessor.getHostBpm() * 10.0f);
+    hash = hash * 1009 + juce::roundToInt (audioProcessor.getSampleBpm (currentHalf) * 10.0f);
     for (int idx : watched)
         hash = hash * 1009 + (juce::int64) audioProcessor.apvts.getRawParameterValue (halfId (currentHalf, idx))->load();
     if (hash != (juce::int64) waveform.getProperties().getWithDefault ("hash", 0))
     {
         waveform.getProperties().set ("hash", hash);
-        waveform.repaint();
+        waveform.invalidate();
     }
 
     const auto idleTime = juce::Time::currentTimeMillis() - lastTouch;
@@ -1395,32 +1643,45 @@ void MiracleAudioProcessorEditor::renderBackground()
         g.fillRect (panel);
     }
 
-    addGrain (background, background.getBounds(), 0.04f, 76);
+    static const juce::Image panelArt = artwork ("panel_png"), editArt = artwork ("edit_panel_png");
+    const bool art = panelArt.isValid();
+    if (! art)
+        addGrain (background, background.getBounds(), 0.04f, 76);
 
     juce::Graphics g (background);
     g.addTransform (artworkScale);
 
-    // moulding edges
-    g.setColour (juce::Colours::black.withAlpha (0.65f));
-    g.drawHorizontalLine (panel.getY(), (float) panel.getX(), (float) panel.getRight());
-    g.drawHorizontalLine (panel.getBottom(), (float) panel.getX(), (float) panel.getRight());
-    g.setColour (juce::Colours::white.withAlpha (0.07f));
-    g.drawHorizontalLine (panel.getY() + 1, (float) panel.getX(), (float) panel.getRight());
-    g.drawHorizontalLine (panel.getBottom() + 1, (float) panel.getX(), (float) panel.getRight());
-    g.setColour (juce::Colours::black.withAlpha (0.5f));
-    g.drawVerticalLine (leftColumn, 0.0f, (float) (compactHeight - 12));
-    g.setColour (juce::Colours::white.withAlpha (0.06f));
-    g.drawVerticalLine (leftColumn - 1, 0.0f, (float) (compactHeight - 12));
-
-    // end cheeks
-    g.setColour (juce::Colours::black.withAlpha (0.35f));
-    g.fillRect (0, 0, 8, compactHeight);
-    g.fillRect (w - 12, 0, 12, compactHeight);
-
-    for (auto x : { leftColumn + 12, w - 26 })
+    if (art)
     {
-        drawScrew (g, { (float) x, 26.0f }, 3.5f);
-        drawScrew (g, { (float) x, (float) bar.getCentreY() }, 3.5f);
+        g.drawImage (panelArt, juce::Rectangle<float> (0.0f, 0.0f, (float) w, (float) compactHeight));
+        if (editOpen && editArt.isValid())
+            g.drawImage (editArt, juce::Rectangle<float> (0.0f, (float) compactHeight, (float) w, (float) editPanelHeight));
+    }
+
+    if (! art)
+    {
+        // moulding edges
+        g.setColour (juce::Colours::black.withAlpha (0.65f));
+        g.drawHorizontalLine (panel.getY(), (float) panel.getX(), (float) panel.getRight());
+        g.drawHorizontalLine (panel.getBottom(), (float) panel.getX(), (float) panel.getRight());
+        g.setColour (juce::Colours::white.withAlpha (0.07f));
+        g.drawHorizontalLine (panel.getY() + 1, (float) panel.getX(), (float) panel.getRight());
+        g.drawHorizontalLine (panel.getBottom() + 1, (float) panel.getX(), (float) panel.getRight());
+        g.setColour (juce::Colours::black.withAlpha (0.5f));
+        g.drawVerticalLine (leftColumn, 0.0f, (float) (compactHeight - 12));
+        g.setColour (juce::Colours::white.withAlpha (0.06f));
+        g.drawVerticalLine (leftColumn - 1, 0.0f, (float) (compactHeight - 12));
+
+        // end cheeks
+        g.setColour (juce::Colours::black.withAlpha (0.35f));
+        g.fillRect (0, 0, 8, compactHeight);
+        g.fillRect (w - 12, 0, 12, compactHeight);
+
+        for (auto x : { leftColumn + 12, w - 26 })
+        {
+            drawScrew (g, { (float) x, 26.0f }, 3.5f);
+            drawScrew (g, { (float) x, (float) bar.getCentreY() }, 3.5f);
+        }
     }
 
     // rear panel print
@@ -1528,28 +1789,34 @@ void MiracleAudioProcessorEditor::renderBackground()
         g.drawText ("VOLUME", v.getX() - 10, panel.getY() + 142, v.getWidth() + 20, 10, juce::Justification::centred);
     }
 
-    // disk tray
+    if (! art)
     {
-        auto tray = juce::Rectangle<float> (18.0f, 14.0f, (float) leftColumn - 34.0f, 204.0f);
-        g.setColour (colours::chassisLo);
-        g.fillRoundedRectangle (tray, 3.0f);
-        juce::ColourGradient lip (juce::Colours::black.withAlpha (0.7f), 0.0f, tray.getY(),
-                                  juce::Colours::transparentBlack, 0.0f, tray.getY() + 16.0f, false);
-        g.setGradientFill (lip);
-        g.fillRoundedRectangle (tray, 3.0f);
-        g.setColour (juce::Colours::white.withAlpha (0.07f));
-        g.drawRoundedRectangle (tray.reduced (0.5f), 3.0f, 1.0f);
+        // disk tray
+        {
+            auto tray = juce::Rectangle<float> (18.0f, 14.0f, (float) leftColumn - 34.0f, 204.0f);
+            g.setColour (colours::chassisLo);
+            g.fillRoundedRectangle (tray, 3.0f);
+            juce::ColourGradient lip (juce::Colours::black.withAlpha (0.7f), 0.0f, tray.getY(),
+                                      juce::Colours::transparentBlack, 0.0f, tray.getY() + 16.0f, false);
+            g.setGradientFill (lip);
+            g.fillRoundedRectangle (tray, 3.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.07f));
+            g.drawRoundedRectangle (tray.reduced (0.5f), 3.0f, 1.0f);
+        }
     }
 
     // wheel well
     {
         auto well = juce::Rectangle<float> (18.0f, 264.0f, (float) leftColumn - 34.0f, (float) compactHeight - 264.0f - 18.0f);
+        if (! art)
+        {
         g.setColour (colours::fascia);
         g.fillRoundedRectangle (well, 2.0f);
         g.setColour (juce::Colours::black.withAlpha (0.6f));
         g.drawRoundedRectangle (well, 2.0f, 1.0f);
         g.setColour (colours::silk.withAlpha (0.5f));
         g.fillRect (well.getX() + 8.0f, well.getBottom() - 8.0f, well.getWidth() - 16.0f, 1.0f);
+        }
 
         g.setColour (colours::silk);
         g.setFont (uiFont (8.5f, true));
@@ -1560,8 +1827,11 @@ void MiracleAudioProcessorEditor::renderBackground()
 
     // keyboard well
     const auto kb = keyboard.getBounds();
-    g.setColour (juce::Colours::black);
-    g.fillRect (kb.getX() - 4, kb.getY() - 2, kb.getWidth() + 8, kb.getHeight() + 6);
+    if (! art)
+    {
+        g.setColour (juce::Colours::black);
+        g.fillRect (kb.getX() - 4, kb.getY() - 2, kb.getWidth() + 8, kb.getHeight() + 6);
+    }
 
     g.setColour (colours::silkDim.withAlpha (0.75f));
     g.setFont (uiFont (8.0f));
@@ -1601,7 +1871,14 @@ void MiracleAudioProcessorEditor::paint (juce::Graphics& g)
         g.drawImage (background, getLocalBounds().toFloat());
 
     // drive slot with the folder name on its label
-    if (! driveSlot.isEmpty())
+    static const bool driveArt = artwork ("panel_png").isValid();
+    if (! driveSlot.isEmpty() && driveArt)
+    {
+        g.setColour (colours::scope.withAlpha (0.75f));
+        g.setFont (uiFont (9.0f, true));
+        g.drawFittedText (folderText.toUpperCase(), driveSlot.reduced (10, 0).withTrimmedRight (40).withTrimmedBottom (12), juce::Justification::centredLeft, 1, 0.7f);
+    }
+    else if (! driveSlot.isEmpty())
     {
         auto r = driveSlot.toFloat();
         g.setColour (juce::Colour (0xff0a0b0c));
@@ -1680,6 +1957,8 @@ void MiracleAudioProcessorEditor::resized()
     waveform.setVisible (editOpen);
     loopModeBox.setVisible (editOpen);
     loopLabel.setVisible (editOpen);
+    reverseSwitch.setVisible (editOpen);
+    syncSwitch.setVisible (editOpen);
 
     if (editOpen)
     {
@@ -1729,9 +2008,14 @@ void MiracleAudioProcessorEditor::resized()
             inner.removeFromRight (8);
             waveform.setBounds (inner);
 
-            auto combo = right.removeFromLeft (84).withSizeKeepingCentre (84, 44);
+            // Reverse above the loop mode, Tempo Sync below it
+            auto combo = right.removeFromLeft (84).withSizeKeepingCentre (84, 104);
+            reverseSwitch.setBounds (combo.removeFromTop (24));
+            combo.removeFromTop (8);
             loopLabel.setBounds (combo.removeFromTop (14));
             loopModeBox.setBounds (combo.removeFromTop (26));
+            combo.removeFromTop (8);
+            syncSwitch.setBounds (combo.removeFromTop (24));
             right.removeFromLeft (8);
             for (int idx : { hpSmpStart, hpSmpEnd, hpLoopStart, hpLoopEnd })
                 placeFader (findFader (idx, false), right.removeFromLeft (faderWidth));

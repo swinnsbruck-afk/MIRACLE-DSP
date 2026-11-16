@@ -103,6 +103,13 @@ void MiracleAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         }
     }
 
+    double bpm = 0.0;
+    if (auto* playHead = getPlayHead())
+        if (auto position = playHead->getPosition())
+            if (auto hostTempo = position->getBpm())
+                bpm = *hostTempo;
+    engine.setHostBpm (bpm);
+
     uiMidi.removeNextBlockOfMessages (midi, buffer.getNumSamples());
     keyboardState.processNextMidiBuffer (midi, 0, buffer.getNumSamples(), true);
     engine.process (buffer, midi);

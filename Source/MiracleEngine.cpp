@@ -113,6 +113,9 @@ void SampleOsc::setup (const Wavesample* w, const ParamRefs& p, int half)
     if (w == nullptr || w->data.size() < 2)
         return;
 
+    const bool reverse = p.h (half, hpReverse) > 0.5f;
+    data = reverse ? &w->reversed : &w->data;
+
     const int n = (int) w->data.size();
     start = juce::jlimit (0, n - 2, (int) ((double) n * p.h (half, hpSmpStart) / 1000.0));
     end   = juce::jlimit (start + 1, n, (int) ((double) n * p.h (half, hpSmpEnd) / 1000.0));
@@ -122,8 +125,11 @@ void SampleOsc::setup (const Wavesample* w, const ParamRefs& p, int half)
 
     if (mode == 2 && w->fileLoopStart >= 0)
     {
-        loopStart = juce::jlimit (0, n - 2, w->fileLoopStart);
-        loopEnd   = juce::jlimit (loopStart + 1, n, w->fileLoopEnd);
+        // a reversed sample loops over the mirrored region
+        const int fileStart = reverse ? n - w->fileLoopEnd : w->fileLoopStart;
+        const int fileEnd   = reverse ? n - w->fileLoopStart : w->fileLoopEnd;
+        loopStart = juce::jlimit (0, n - 2, fileStart);
+        loopEnd   = juce::jlimit (loopStart + 1, n, fileEnd);
         looping = true;
     }
     else if (mode == 1)
@@ -172,7 +178,7 @@ float SampleOsc::tickLoFi (double dacTicksPerOutput, double sourcePerTick)
     while (clock >= 1.0 && active)
     {
         clock -= 1.0;
-        held = std::round (ws->data[(size_t) pos] * 127.0f) / 127.0f;
+        held = std::round ((*data)[(size_t) pos] * 127.0f) / 127.0f;
         advance (sourcePerTick);
     }
 
@@ -183,13 +189,13 @@ float SampleOsc::tickHiFi (double sourcePerOutput)
 {
     const int i = (int) pos;
     const float frac = (float) (pos - i);
-    const float s0 = ws->data[(size_t) i];
+    const float s0 = (*data)[(size_t) i];
     float s1 = 0.0f;
 
     if (i + 1 < end)
-        s1 = ws->data[(size_t) i + 1];
+        s1 = (*data)[(size_t) i + 1];
     else if (looping)
-        s1 = ws->data[(size_t) loopStart];
+        s1 = (*data)[(size_t) loopStart];
 
     advance (sourcePerOutput);
     return s0 + frac * (s1 - s0);
@@ -270,6 +276,8 @@ void MiracleEngine::process (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&
         }
     };
 
+    updateTempoSync();
+
     for (const auto meta : midi)
     {
         renderUntil (juce::jlimit (0, numSamples, meta.samplePosition));
@@ -277,6 +285,7 @@ void MiracleEngine::process (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&
     }
 
     renderUntil (numSamples);
+    updatePlayheads();
 
     const float vol = p->g (gpVolume) / 99.0f;
     const float gain = 0.9f * vol * vol;
@@ -480,7 +489,7 @@ void MiracleEngine::renderVoices (float* out, int numSamples)
 
         const int half = v.half;
         const float baseSemis = (float) v.note + 12.0f * p->h (half, hpOctave) + p->h (half, hpCoarse) + p->h (half, hpFine) / 100.0f
-                              + globalSemis + lfoSemis[half];
+                              + globalSemis + lfoSemis[half] + syncOffset[half];
 
         double dacTicks[2] {}, srcPerTick[2] {}, srcStep[2] {};
         bool use[2] { v.oscMix < 1.0f && v.osc[0].active, v.oscMix > 0.0f && v.osc[1].active };
@@ -528,5 +537,87 @@ void MiracleEngine::renderVoices (float* out, int numSamples)
             v.active = false;
             v.bank = nullptr;
         }
+    }
+}
+
+//==============================================================================
+float MiracleEngine::estimateBpm (const Wavesample& ws, double lengthSeconds)
+{
+    if (ws.fileBpm > 0.0f)
+        return ws.fileBpm;
+
+    if (lengthSeconds <= 0.0)
+        return 0.0f;
+
+    float best = 0.0f;
+    for (int beats = 1; beats <= 128; beats *= 2)
+    {
+        const auto bpm = (float) (60.0 * beats / lengthSeconds);
+        if (bpm >= 70.0f && bpm < 180.0f)
+            return bpm;
+        if (best == 0.0f || std::abs (bpm - 120.0f) < std::abs (best - 120.0f))
+            best = bpm;
+    }
+
+    return best;
+}
+
+void MiracleEngine::updateTempoSync()
+{
+    const float host = hostBpm > 0.0 ? (float) hostBpm : 120.0f;
+    usedHostBpm.store (host, std::memory_order_relaxed);
+
+    for (int half = 0; half < 2; ++half)
+    {
+        syncOffset[half] = 0.0f;
+        int key = -1;
+        float sampleBpm = 0.0f;
+
+        const auto* bank = bankFor (half);
+        if (p->h (half, hpTempoSync) > 0.5f && bank != nullptr && bank != defaultBank.get() && ! bank->samples.empty())
+        {
+            const auto& ws = bank->samples[0];
+            const int n = (int) ws.data.size();
+            const int start = juce::jlimit (0, n - 2, (int) ((double) n * p->h (half, hpSmpStart) / 1000.0));
+            const int end = juce::jlimit (start + 1, n, (int) ((double) n * p->h (half, hpSmpEnd) / 1000.0));
+            sampleBpm = estimateBpm (ws, (end - start) / ws.fileRate);
+
+            if (sampleBpm > 0.0f)
+            {
+                // Playing the sample faster by host/sample tempo needs this many semitones;
+                // find the key that gets there with the current tuning settings
+                const double semis = 12.0 * std::log2 (host / sampleBpm);
+                const double tuning = 12.0 * (p->h (half, hpOctave) + p->g (gpOctave))
+                                    + p->h (half, hpCoarse) + p->h (half, hpFine) / 100.0 + p->g (gpTune) / 100.0;
+                const double exact = ws.rootNote + semis - tuning;
+                const int rounded = (int) std::lround (exact);
+                syncOffset[half] = (float) (exact - rounded);
+                key = juce::isPositiveAndBelow (rounded, 128) ? rounded : -1;
+            }
+        }
+
+        syncKey[half].store (key, std::memory_order_relaxed);
+        syncSampleBpm[half].store (sampleBpm, std::memory_order_relaxed);
+    }
+}
+
+void MiracleEngine::updatePlayheads()
+{
+    for (int half = 0; half < 2; ++half)
+    {
+        const Voice* newest = nullptr;
+        for (const auto& v : voices)
+            if (v.active && v.half == half && (newest == nullptr || v.age > newest->age))
+                newest = &v;
+
+        float position = -1.0f;
+        if (newest != nullptr)
+        {
+            const auto& osc = newest->oscMix < 1.0f ? newest->osc[0] : newest->osc[1];
+            if (osc.active && osc.data != nullptr && ! osc.data->empty())
+                position = (float) (osc.pos / (double) osc.data->size());
+        }
+
+        playhead[half].store (position, std::memory_order_relaxed);
     }
 }

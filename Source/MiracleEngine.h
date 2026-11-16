@@ -99,6 +99,7 @@ private:
 struct SampleOsc
 {
     const Wavesample* ws = nullptr;
+    const std::vector<float>* data = nullptr;   // forward or reversed samples
     bool active = false;
     double pos = 0.0;
     double clock = 1.0;
@@ -147,6 +148,20 @@ public:
     float getPitchBend() const { return pitchBend.load (std::memory_order_relaxed); }
     float getModWheel() const  { return modWheel.load (std::memory_order_relaxed); }
 
+    // Host tempo for Tempo Sync, 0 when the host does not report one
+    void setHostBpm (double bpm) { hostBpm = bpm; }
+
+    // For the editor: play position 0..1 of the newest voice of a half (-1 = silent),
+    // the key that plays the sample in host tempo (-1 = Tempo Sync off) and the tempos used
+    float getPlayhead (int half) const   { return playhead[half].load (std::memory_order_relaxed); }
+    int getSyncKey (int half) const      { return syncKey[half].load (std::memory_order_relaxed); }
+    float getSampleBpm (int half) const  { return syncSampleBpm[half].load (std::memory_order_relaxed); }
+    float getUsedHostBpm() const         { return usedHostBpm.load (std::memory_order_relaxed); }
+
+    // Tempo of a sample: from its name, else the number of beats (1, 2, 4 … 128)
+    // that gives a tempo between 70 and 180 BPM for the play range
+    static float estimateBpm (const Wavesample& ws, double lengthSeconds);
+
 private:
     void handleMidi (const juce::MidiMessage& m);
     void noteOn (int note, float velocity);
@@ -155,6 +170,8 @@ private:
     void releaseVoice (Voice& v, float releaseVelocity);
     Voice* findVoiceToUse (int half);
     void renderVoices (float* out, int numSamples);
+    void updateTempoSync();
+    void updatePlayheads();
     const SampleBank* bankFor (int half) const;
     int halfForNote (int note) const;
 
@@ -167,6 +184,13 @@ private:
 
     std::atomic<float> pitchBend { 0.0f };   // -1..1
     std::atomic<float> modWheel { 0.0f };    // 0..1
+
+    double hostBpm = 0.0;
+    float syncOffset[2] {};                  // semitones that make the sync key exact
+    std::atomic<float> playhead[2] { -1.0f, -1.0f };
+    std::atomic<int> syncKey[2] { -1, -1 };
+    std::atomic<float> syncSampleBpm[2] { 0.0f, 0.0f };
+    std::atomic<float> usedHostBpm { 120.0f };
     bool sustainPedal = false;
     double lfoPhase[2] {};
 

@@ -81,6 +81,11 @@ public:
     float getPitchBend() const { return engine.getPitchBend(); }
     float getModWheel() const  { return engine.getModWheel(); }
 
+    float getPlayhead (int half) const  { return engine.getPlayhead (half); }
+    int getSyncKey (int half) const     { return engine.getSyncKey (half); }
+    float getSampleBpm (int half) const { return engine.getSampleBpm (half); }
+    float getHostBpm() const            { return engine.getUsedHostBpm(); }
+
     // Fold-out edit panel, remembered with the project
     bool isEditPanelOpen() const { return editPanelOpen; }
     void setEditPanelOpen (bool open);
